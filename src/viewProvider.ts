@@ -52,17 +52,36 @@ export class ViewProvider implements vscode.TreeDataProvider<nodeView> {
     if (!element) {
       return Promise.resolve(
         Object.keys(this.pkgJson.contributes.views).map(
-          key => new nodeView(key, key, vscode.TreeItemCollapsibleState.Collapsed, "type-hierarchy")
+          key => new nodeView(nodeType.level1, key, key, vscode.TreeItemCollapsibleState.Collapsed, "type-hierarchy")
         )
       );
     } else {
-      // 加载子项
-      return Promise.resolve(
-        this.pkgJson.contributes.views[element.label].map((item: any) => {
-          return new nodeView(item.name, item.id, vscode.TreeItemCollapsibleState.None, item.icon || 'check');
-        })
-      );
+      switch (element.type) {
+        case nodeType.level1:
+          // 加载子项
+          return Promise.resolve(
+            this.pkgJson.contributes.views[element.label].map((item: any) => {
+              return new nodeView(nodeType.level2, item.name, item.id, vscode.TreeItemCollapsibleState.Collapsed, "type-hierarchy");
+            })
+          );
+        case nodeType.level2:
+          const idprefix = element.id.split(".")[0];
+          const aa = this.pkgJson.contributes.views[idprefix].filter((item: any) => item.id === element.id)[0];
+          console.log("aa: ", aa);
+          return Promise.resolve(
+            Object.keys(aa).map(key => {
+              return new nodeView(nodeType.level3, aa[key], "", vscode.TreeItemCollapsibleState.None, key + '.svg');
+            })
+          );
+        case nodeType.level3:
+          break;
+        default:
+          break;
+      }
     }
+    return new Promise(resolve => {
+      new nodeView(nodeType.level3, "this is test", "test", vscode.TreeItemCollapsibleState.None);
+    });
   }
 
   getTreeItem(element: nodeView): nodeView {
@@ -82,20 +101,26 @@ export class ViewProvider implements vscode.TreeDataProvider<nodeView> {
 
 }
 
-
+enum nodeType {
+  item,
+  itemDetail,
+  level1,
+  level2,
+  level3
+}
 class nodeView extends vscode.TreeItem {
   constructor(
+    public readonly type: nodeType,
     public readonly label: string,
-    public id: string,
+    public readonly id: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-    public icon?: any,
+    public readonly icon?: any,
     public readonly command?: vscode.Command
   ) {
     super(label, collapsibleState);
     this.description = id;
     this.iconPath = this.getIcon(this.icon);
   }
-
   getIcon(iconName: string | undefined): vscode.ThemeIcon | { light: string; dark: string } {
     // a.svg          √
     // right          √
@@ -127,7 +152,7 @@ class nodeView extends vscode.TreeItem {
     }
   }
   private getIconPath(theme: string, iconName: string): string {
-    return path.join(__dirname, '..', '..', 'resources', theme, iconName);
+    return path.join(__dirname, '..', 'resources', theme, iconName);
   }
   private isValidBuiltInIcon(iconName: string): boolean {
     // This is a partial list of built-in icons. You may need to update this list periodically.

@@ -3,5 +3,8 @@
     {
       "path": "."
     }
-  ]
+  ],
+  "settings": {
+    "cursor.chat.smoothStreaming": true
+  }
 }

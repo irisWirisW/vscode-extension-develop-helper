@@ -2,7 +2,7 @@
   "name": "vscode-extension-develop-helper",
   "displayName": "vscode-extension-develop-helper",
   "description": "aaaaaaa",
-  "version": "0.0.8",
+  "version": "0.1.1",
   "engines": {
     "vscode": "^1.94.0"
   },
