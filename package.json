@@ -1,0 +1,71 @@
+{
+  "name": "vscode-extension-develop-helper",
+  "displayName": "vscode-extension-develop-helper",
+  "description": "aaaaaaa",
+  "version": "0.0.8",
+  "engines": {
+    "vscode": "^1.94.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "vedh",
+          "title": "插件开发助手",
+          "icon": "resources/icon/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "vedh": [
+        {
+          "id": "vedh.views",
+          "name": "view管理",
+          "when": "true",
+          "icon": "type-hierarchy"
+        },
+        {
+          "id": "vedh.commands",
+          "name": "commands管理",
+          "icon": "type-hierarchy"
+        }
+      ],
+      "test": [
+        {
+          "id": "test.1",
+          "name": "这是测试1"
+        },
+        {
+          "id": "test.2",
+          "name": "这是测试2"
+        }
+      ]
+    },
+    "commands": []
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test",
+    "update-version": "node updateVersion.js && vsce package --allow-missing-repository -o ./out"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.8",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.94.0",
+    "@typescript-eslint/eslint-plugin": "^8.7.0",
+    "@typescript-eslint/parser": "^8.7.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.11.1",
+    "typescript": "^5.5.1-rc"
+  }
+}
