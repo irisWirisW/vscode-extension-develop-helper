@@ -1,17 +1,20 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { IconManager, COMMON_ICONS } from './iconManager';
 
 export class CommandsProvider implements vscode.TreeDataProvider<CommandNode> {
 
   pkgPath: string | undefined;
   pkgJson: any = undefined;
   hasPackageJson: boolean = false;
+  private iconManager: IconManager;
 
   constructor(
     public context: vscode.ExtensionContext,
     public readonly currentPath: string | undefined
   ) {
+    this.iconManager = new IconManager(context.extensionPath);
     if (currentPath) {
       this.pkgPath = path.join(currentPath, "package.json");
 
@@ -82,7 +85,8 @@ export class CommandsProvider implements vscode.TreeDataProvider<CommandNode> {
           "",
           "",
           vscode.TreeItemCollapsibleState.None,
-          "error"
+          "error",
+          this.iconManager
         )
       ]);
     }
@@ -96,7 +100,8 @@ export class CommandsProvider implements vscode.TreeDataProvider<CommandNode> {
           "",
           "",
           vscode.TreeItemCollapsibleState.None,
-          "info"
+          "info",
+          this.iconManager
         )
       ]);
     }
@@ -112,7 +117,8 @@ export class CommandsProvider implements vscode.TreeDataProvider<CommandNode> {
             cmd.command,
             cmd.command,
             vscode.TreeItemCollapsibleState.Collapsed,
-            cmd.icon ? 'symbol-method' : 'terminal'
+            cmd.icon ? 'symbol-method' : 'terminal',
+            this.iconManager
           );
         })
       );
@@ -126,20 +132,14 @@ export class CommandsProvider implements vscode.TreeDataProvider<CommandNode> {
           Object.keys(command).forEach(key => {
             const value = command[key];
             let displayValue = '';
-            let icon = 'symbol-property';
 
             if (typeof value === 'object') {
               displayValue = JSON.stringify(value, null, 2);
-              icon = 'json';
-            } else if (typeof value === 'boolean') {
-              displayValue = String(value);
-              icon = 'symbol-boolean';
-            } else if (typeof value === 'string') {
-              displayValue = value;
-              icon = 'symbol-string';
             } else {
               displayValue = String(value);
             }
+
+            const icon = this.iconManager.getIconForPropertyType(value);
 
             details.push(
               new CommandNode(
@@ -148,7 +148,8 @@ export class CommandsProvider implements vscode.TreeDataProvider<CommandNode> {
                 displayValue,
                 "",
                 vscode.TreeItemCollapsibleState.None,
-                icon
+                icon,
+                this.iconManager
               )
             );
           });
@@ -263,16 +264,313 @@ export class CommandsProvider implements vscode.TreeDataProvider<CommandNode> {
         vscode.window.showErrorMessage(`打开文件失败: ${error}`);
       }
     } else if (node.type === NodeType.property) {
-      // 如果是属性节点，提供快速编辑选项
-      const newValue = await vscode.window.showInputBox({
-        prompt: `编辑属性 "${node.name}"`,
-        value: node.description,
-        placeHolder: '输入新值'
+      // 如果是 icon 属性，显示图标选择器
+      if (node.name === 'icon') {
+        // 检查当前值是否是对象（light/dark格式）
+        let currentIconValue = node.description;
+        try {
+          const parsed = JSON.parse(node.description);
+          if (typeof parsed === 'object' && (parsed.light || parsed.dark)) {
+            const choice = await vscode.window.showInformationMessage(
+              '当前图标使用了自定义 SVG 文件（light/dark），是否要替换为内置图标？',
+              '是',
+              '取消'
+            );
+            if (choice !== '是') {
+              return;
+            }
+            currentIconValue = '';
+          }
+        } catch {
+          // 不是 JSON 对象，继续
+        }
+
+        const selectedIcon = await this.showIconPicker(currentIconValue);
+        if (selectedIcon && selectedIcon !== node.description) {
+          await this.updateIconValue(node.description, selectedIcon);
+        }
+      } else {
+        // 其他属性使用文本输入框
+        const newValue = await vscode.window.showInputBox({
+          prompt: `编辑属性 "${node.name}"`,
+          value: node.description,
+          placeHolder: '输入新值'
+        });
+
+        if (newValue !== undefined && newValue !== node.description) {
+          await this.updatePropertyValue(node.name, node.description, newValue);
+        }
+      }
+    }
+  }
+
+  private async showIconPicker(currentIcon: string): Promise<string | undefined> {
+    // 使用统一的常用图标列表
+
+    // 创建 QuickPick
+    const quickPick = vscode.window.createQuickPick();
+    quickPick.title = '选择图标';
+    quickPick.placeholder = '搜索或选择一个内置图标...';
+    quickPick.matchOnDescription = true;  // 启用对 description 的搜索（中文）
+    quickPick.matchOnDetail = true;       // 启用对 detail 的搜索（英文图标名）
+
+    // 添加按钮：本地图标 + 帮助文档
+    quickPick.buttons = [
+      {
+        iconPath: new vscode.ThemeIcon('add'),
+        tooltip: '选择本地 SVG 图标文件'
+      },
+      {
+        iconPath: new vscode.ThemeIcon('question'),
+        tooltip: '查看所有可用的内置图标'
+      }
+    ];
+
+    // 添加自定义输入选项和常用图标
+    quickPick.items = [
+      {
+        label: '$(pencil) 输入自定义图标名称',
+        description: '手动输入任何 Codicon 图标',
+        detail: 'VSCode 有 400+ 个内置图标可用',
+        alwaysShow: true
+      },
+      { label: '', kind: vscode.QuickPickItemKind.Separator },
+      ...COMMON_ICONS.map(icon => ({
+        label: icon.label,
+        description: icon.description,
+        detail: `图标名称: ${icon.icon}`
+      }))
+    ];
+
+    // 如果有当前图标，高亮显示
+    if (currentIcon) {
+      const currentItem = quickPick.items.find(item =>
+        item.label === currentIcon || item.label === `$(${currentIcon})`
+      );
+      if (currentItem) {
+        quickPick.activeItems = [currentItem];
+      }
+    }
+
+    return new Promise((resolve) => {
+      // 处理按钮点击事件
+      quickPick.onDidTriggerButton(async (button) => {
+        const buttonIndex = quickPick.buttons.indexOf(button);
+
+        if (buttonIndex === 0) {
+          // 第一个按钮：选择本地图标
+          quickPick.hide();
+          const localIcon = await this.selectLocalIcon();
+          resolve(localIcon);
+        } else if (buttonIndex === 1) {
+          // 第二个按钮：打开帮助文档
+          vscode.env.openExternal(vscode.Uri.parse('https://code.visualstudio.com/api/references/icons-in-labels'));
+          // 不关闭选择器，用户可以继续选择
+        }
       });
 
-      if (newValue !== undefined && newValue !== node.description) {
-        await this.updatePropertyValue(node.name, node.description, newValue);
+      quickPick.onDidChangeSelection(async (items) => {
+        if (items.length > 0) {
+          const selected = items[0];
+
+          // 如果选择了自定义输入选项
+          if (selected.label === '$(pencil) 输入自定义图标名称') {
+            quickPick.hide();
+            const customIcon = await this.inputCustomIcon();
+            resolve(customIcon);
+          } else {
+            resolve(selected.label);
+            quickPick.hide();
+          }
+        }
+      });
+
+      quickPick.onDidHide(() => {
+        resolve(undefined);
+        quickPick.dispose();
+      });
+
+      quickPick.show();
+    });
+  }
+
+  private async inputCustomIcon(): Promise<string | undefined> {
+    const iconName = await vscode.window.showInputBox({
+      prompt: '输入 Codicon 图标名称',
+      placeHolder: '例如: sync, edit, check, rocket',
+      title: '自定义图标',
+      validateInput: (value) => {
+        if (!value) {
+          return '请输入图标名称';
+        }
+        // 基本验证：只允许字母、数字、连字符和波浪号
+        if (!/^[a-z0-9\-~]+$/i.test(value)) {
+          return '图标名称只能包含字母、数字、连字符(-)和波浪号(~)';
+        }
+        return null;
       }
+    });
+
+    if (iconName) {
+      // 如果用户输入了图标名，返回格式化的图标字符串
+      return `$(${iconName})`;
+    }
+
+    return undefined;
+  }
+
+  private async selectLocalIcon(): Promise<string | undefined> {
+    // 询问用户选择单个图标还是 light/dark 两个图标
+    const choice = await vscode.window.showQuickPick(
+      [
+        { label: '单个 SVG 图标', description: '适用于所有主题', value: 'single' },
+        { label: 'Light + Dark 两个图标', description: '分别适配浅色和深色主题', value: 'dual' }
+      ],
+      {
+        placeHolder: '选择图标类型...',
+        title: '本地图标配置'
+      }
+    );
+
+    if (!choice) {
+      return undefined;
+    }
+
+    if (choice.value === 'single') {
+      // 选择单个 SVG 文件
+      const uris = await vscode.window.showOpenDialog({
+        canSelectFiles: true,
+        canSelectFolders: false,
+        canSelectMany: false,
+        filters: {
+          'SVG 图标': ['svg']
+        },
+        title: '选择 SVG 图标文件'
+      });
+
+      if (uris && uris.length > 0) {
+        const relativePath = this.getRelativePath(uris[0].fsPath);
+        return relativePath;
+      }
+    } else {
+      // 选择 light 和 dark 两个文件
+      const lightUris = await vscode.window.showOpenDialog({
+        canSelectFiles: true,
+        canSelectFolders: false,
+        canSelectMany: false,
+        filters: {
+          'SVG 图标': ['svg']
+        },
+        title: '选择 Light 主题图标'
+      });
+
+      if (!lightUris || lightUris.length === 0) {
+        return undefined;
+      }
+
+      const darkUris = await vscode.window.showOpenDialog({
+        canSelectFiles: true,
+        canSelectFolders: false,
+        canSelectMany: false,
+        filters: {
+          'SVG 图标': ['svg']
+        },
+        title: '选择 Dark 主题图标'
+      });
+
+      if (!darkUris || darkUris.length === 0) {
+        return undefined;
+      }
+
+      const lightPath = this.getRelativePath(lightUris[0].fsPath);
+      const darkPath = this.getRelativePath(darkUris[0].fsPath);
+
+      // 返回 JSON 格式的图标配置
+      return JSON.stringify({
+        light: lightPath,
+        dark: darkPath
+      });
+    }
+
+    return undefined;
+  }
+
+  private getRelativePath(absolutePath: string): string {
+    // 获取相对于 package.json 的相对路径
+    if (this.currentPath) {
+      const relative = path.relative(this.currentPath, absolutePath);
+      // 确保使用正斜杠（跨平台兼容）
+      return relative.replace(/\\/g, '/');
+    }
+    return absolutePath;
+  }
+
+  private async updateIconValue(oldValue: string, newValue: string): Promise<void> {
+    if (!this.pkgPath) {
+      return;
+    }
+
+    try {
+      const doc = await vscode.workspace.openTextDocument(this.pkgPath);
+      const text = doc.getText();
+      let match: RegExpExecArray | null = null;
+      let searchPattern: RegExp;
+
+      // 尝试匹配对象格式的图标（light/dark）
+      try {
+        const parsed = JSON.parse(oldValue);
+        if (typeof parsed === 'object') {
+          // 匹配多行的对象格式
+          searchPattern = new RegExp(
+            `"icon"\\s*:\\s*\\{[^}]*\\}`,
+            'gs'
+          );
+          match = searchPattern.exec(text);
+        }
+      } catch {
+        // 如果不是 JSON，尝试匹配简单字符串格式
+        searchPattern = new RegExp(
+          `"icon"\\s*:\\s*"${oldValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`,
+          'g'
+        );
+        match = searchPattern.exec(text);
+      }
+
+      if (match && match.index !== undefined) {
+        const editor = await vscode.window.showTextDocument(doc);
+        const startPos = doc.positionAt(match.index);
+        const endPos = doc.positionAt(match.index + match[0].length);
+
+        // 构建替换内容
+        let replacement: string;
+        try {
+          // 检查新值是否是 JSON 对象（light/dark格式）
+          const parsed = JSON.parse(newValue);
+          if (typeof parsed === 'object' && (parsed.light || parsed.dark)) {
+            // 格式化为多行 JSON
+            replacement = `"icon": {\n          "light": "${parsed.light}",\n          "dark": "${parsed.dark}"\n        }`;
+          } else {
+            replacement = `"icon": "${newValue}"`;
+          }
+        } catch {
+          // 不是 JSON，作为字符串处理
+          replacement = `"icon": "${newValue}"`;
+        }
+
+        const success = await editor.edit(editBuilder => {
+          editBuilder.replace(new vscode.Range(startPos, endPos), replacement);
+        });
+
+        if (success) {
+          await doc.save();
+          vscode.window.showInformationMessage(`图标已更新`);
+          this.refresh();
+        }
+      } else {
+        vscode.window.showWarningMessage(`无法找到图标配置`);
+      }
+    } catch (error) {
+      vscode.window.showErrorMessage(`更新失败: ${error}`);
     }
   }
 
@@ -353,12 +651,13 @@ class CommandNode extends vscode.TreeItem {
     public readonly description: string,
     public readonly id: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-    public readonly icon?: string,
+    public readonly icon: string | undefined,
+    private iconManager: IconManager,
     public command?: vscode.Command
   ) {
     super(name, collapsibleState);
     this.description = description;
-    this.iconPath = this.getIcon(this.icon);
+    this.iconPath = iconManager.getIcon(icon);
 
     // 设置 contextValue 用于菜单条件判断
     switch (type) {
@@ -380,30 +679,5 @@ class CommandNode extends vscode.TreeItem {
     if (type === NodeType.property) {
       this.tooltip = `${name}: ${description}`;
     }
-  }
-
-  getIcon(iconName: string | undefined): vscode.ThemeIcon | { light: string; dark: string } {
-    if (!iconName) {
-      return new vscode.ThemeIcon('circle-slash');
-    }
-
-    if (iconName.endsWith('.svg')) {
-      const lightPath = this.getIconPath('light', iconName);
-      const darkPath = this.getIconPath('dark', iconName);
-
-      if (fs.existsSync(lightPath) && fs.existsSync(darkPath)) {
-        return {
-          light: lightPath,
-          dark: darkPath
-        };
-      }
-    }
-
-    // 使用内置图标
-    return new vscode.ThemeIcon(iconName);
-  }
-
-  private getIconPath(theme: string, iconName: string): string {
-    return path.join(__dirname, '..', 'resources', theme, iconName);
   }
 }

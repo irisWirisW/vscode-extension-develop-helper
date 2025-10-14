@@ -1,17 +1,20 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { IconManager } from './iconManager';
 
 export class ViewsContainersProvider implements vscode.TreeDataProvider<ViewContainerNode> {
 
   pkgPath: string | undefined;
   pkgJson: any = undefined;
   hasPackageJson: boolean = false;
+  private iconManager: IconManager;
 
   constructor(
     public context: vscode.ExtensionContext,
     public readonly currentPath: string | undefined
   ) {
+    this.iconManager = new IconManager(context.extensionPath);
     if (currentPath) {
       this.pkgPath = path.join(currentPath, "package.json");
 
@@ -67,7 +70,8 @@ export class ViewsContainersProvider implements vscode.TreeDataProvider<ViewCont
           "",
           "",
           vscode.TreeItemCollapsibleState.None,
-          "error"
+          "error",
+          this.iconManager
         )
       ]);
     }
@@ -80,7 +84,8 @@ export class ViewsContainersProvider implements vscode.TreeDataProvider<ViewCont
           "",
           "",
           vscode.TreeItemCollapsibleState.None,
-          "info"
+          "info",
+          this.iconManager
         )
       ]);
     }
@@ -97,7 +102,8 @@ export class ViewsContainersProvider implements vscode.TreeDataProvider<ViewCont
             `${count} 个容器`,
             location,
             vscode.TreeItemCollapsibleState.Collapsed,
-            'layout'
+            'layout',
+            this.iconManager
           );
         })
       );
@@ -112,7 +118,8 @@ export class ViewsContainersProvider implements vscode.TreeDataProvider<ViewCont
             container.id,
             container.id,
             vscode.TreeItemCollapsibleState.Collapsed,
-            'window'
+            'window',
+            this.iconManager
           );
         })
       );
@@ -132,20 +139,14 @@ export class ViewsContainersProvider implements vscode.TreeDataProvider<ViewCont
         Object.keys(container).forEach(key => {
           const value = container[key];
           let displayValue = '';
-          let icon = 'symbol-property';
 
           if (typeof value === 'object') {
             displayValue = JSON.stringify(value, null, 2);
-            icon = 'json';
-          } else if (typeof value === 'boolean') {
-            displayValue = String(value);
-            icon = 'symbol-boolean';
-          } else if (typeof value === 'string') {
-            displayValue = value;
-            icon = 'symbol-string';
           } else {
             displayValue = String(value);
           }
+
+          const icon = this.iconManager.getIconForPropertyType(value);
 
           details.push(
             new ViewContainerNode(
@@ -154,7 +155,8 @@ export class ViewsContainersProvider implements vscode.TreeDataProvider<ViewCont
               displayValue,
               "",
               vscode.TreeItemCollapsibleState.None,
-              icon
+              icon,
+              this.iconManager
             )
           );
         });
@@ -258,12 +260,13 @@ class ViewContainerNode extends vscode.TreeItem {
     public readonly description: string,
     public readonly id: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-    public readonly icon?: string,
+    public readonly icon: string | undefined,
+    private iconManager: IconManager,
     public command?: vscode.Command
   ) {
     super(name, collapsibleState);
     this.description = description;
-    this.iconPath = this.getIcon(this.icon);
+    this.iconPath = iconManager.getIcon(icon);
 
     switch (type) {
       case NodeType.location:
@@ -286,12 +289,5 @@ class ViewContainerNode extends vscode.TreeItem {
     if (type === NodeType.property) {
       this.tooltip = `${name}: ${description}`;
     }
-  }
-
-  getIcon(iconName: string | undefined): vscode.ThemeIcon {
-    if (!iconName) {
-      return new vscode.ThemeIcon('circle-slash');
-    }
-    return new vscode.ThemeIcon(iconName);
   }
 }

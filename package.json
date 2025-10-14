@@ -2,7 +2,7 @@
   "name": "vscode-extension-develop-helper",
   "displayName": "VSCode Extension Develop Helper",
   "description": "A helper tool for VSCode extension development that visualizes package.json configurations",
-  "version": "0.1.22",
+  "version": "0.1.23",
   "publisher": "1risW",
   "author": "1risW",
   "license": "MIT",
@@ -39,19 +39,30 @@
       "vedh": [
         {
           "id": "vedh.viewsContainers",
-          "name": "viewsContainers管理"
+          "name": "viewsContainers管理",
+          "when": "resourceFilename == package.json",
+          "collapsible": "collapsed",
+          "icon": "resources/icon/icon.svg"
         },
         {
           "id": "vedh.views",
-          "name": "views管理"
+          "name": "views管理",
+          "when": "resourceFilename == package.json",
+          "collapsible": "collapsed",
+          "icon": "resources/icon/icon.svg"
         },
         {
           "id": "vedh.commands",
-          "name": "commands管理"
+          "name": "commands管理",
+          "when": "resourceFilename == package.json",
+          "collapsible": "collapsed",
+          "icon": "resources/icon/icon.svg"
         },
         {
           "id": "vedh.menus",
-          "name": "menus管理"
+          "name": "menus管理",
+          "collapsible": "collapsed",
+          "icon": "resources/icon/icon.svg"
         }
       ],
       "test": [
@@ -186,7 +197,7 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "compile": "npm version patch --no-git-tag-version && tsc -p ./",
     "watch": "tsc -watch -p ./",
     "clean": "rm -rf out",
     "rebuild": "npm run clean && npm run compile",
@@ -194,13 +205,7 @@
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "test": "vscode-test",
-    "package": "vsce package --allow-missing-repository -o ./out",
-    "version:patch": "npm version patch --no-git-tag-version",
-    "version:minor": "npm version minor --no-git-tag-version",
-    "version:major": "npm version major --no-git-tag-version",
-    "release:patch": "npm run version:patch && npm run package",
-    "release:minor": "npm run version:minor && npm run package",
-    "release:major": "npm run version:major && npm run package"
+    "package": "npm version minor --no-git-tag-version && vsce package --allow-missing-repository -o ./out"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.8",

@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { IconManager } from './iconManager';
 
 // 1.传入当前的工作区文件夹地址
 // 2.获取到package.json的路径
@@ -12,12 +13,14 @@ export class ViewProvider implements vscode.TreeDataProvider<nodeView> {
   pkgPath: string | undefined;
   pkgJson: any = undefined;
   viewNodes = [];
+  private iconManager: IconManager;
 
 
   constructor(
     public context: vscode.ExtensionContext,
     public readonly currentPath: string | undefined
   ) {
+    this.iconManager = new IconManager(context.extensionPath);
 
     // console.log("workspace address: ", currentPath);
     this.pkgPath = currentPath + "/package.json";
@@ -70,7 +73,8 @@ export class ViewProvider implements vscode.TreeDataProvider<nodeView> {
           "",
           "",
           vscode.TreeItemCollapsibleState.None,
-          'error'
+          'error',
+          this.iconManager
         )
       ]);
     }
@@ -84,7 +88,8 @@ export class ViewProvider implements vscode.TreeDataProvider<nodeView> {
           "",
           "",
           vscode.TreeItemCollapsibleState.None,
-          'info'
+          'info',
+          this.iconManager
         )
       ]);
     }
@@ -92,14 +97,14 @@ export class ViewProvider implements vscode.TreeDataProvider<nodeView> {
     if (!element) {
       return Promise.resolve(
         Object.keys(this.pkgJson.contributes.views).map(
-          key => new nodeView(nodeType.level1, key, "lv1", key, vscode.TreeItemCollapsibleState.Collapsed, 'gear')
+          key => new nodeView(nodeType.level1, key, "lv1", key, vscode.TreeItemCollapsibleState.Collapsed, 'gear', this.iconManager)
         )
       );
     } else {
       switch (element.type) {
         case nodeType.level1: // 加载子项
           const lv1List: nodeView[] = this.pkgJson.contributes.views[element.name].map((item: any) => {
-            return new nodeView(nodeType.level2, item.name, item.id, item.id, vscode.TreeItemCollapsibleState.Collapsed, item.icon);
+            return new nodeView(nodeType.level2, item.name, item.id, item.id, vscode.TreeItemCollapsibleState.Collapsed, item.icon, this.iconManager);
           });
           return Promise.resolve(lv1List);
         case nodeType.level2: // 加载子项的详细内容
@@ -109,8 +114,9 @@ export class ViewProvider implements vscode.TreeDataProvider<nodeView> {
           const aa = this.pkgJson.contributes.views[idprefix].filter((item: any) => item.id === element.id)[0];
           return Promise.resolve(
             Object.keys(aa).map(key => {
-              const name = aa[key];
-              return new nodeView(nodeType.level3, name, key, "", vscode.TreeItemCollapsibleState.None, 'gear');
+              const value = aa[key];
+              const icon = this.iconManager.getIconForPropertyType(value);
+              return new nodeView(nodeType.level3, value, key, "", vscode.TreeItemCollapsibleState.None, icon, this.iconManager);
             })
           );
       }
@@ -157,92 +163,12 @@ class nodeView extends vscode.TreeItem {
     public readonly description: string,
     public readonly id: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-    public readonly icon?: any,
+    public readonly icon: string | undefined,
+    private iconManager: IconManager,
     public command?: vscode.Command
   ) {
     super(name, collapsibleState);
     this.description = description;
-    this.iconPath = this.getIcon(this.icon);
-  }
-  getIcon(iconName: string | undefined): vscode.ThemeIcon | { light: string; dark: string } {
-    // a.svg          √
-    // right          √
-    // notExist.svg   ⛌
-    // notExist       ⛌
-    // null           ⛌
-    if (!iconName) {
-      return new vscode.ThemeIcon('circle-slash');
-    }
-
-    if (iconName.endsWith('.svg')) {
-      const lightPath = this.getIconPath('light', iconName);
-      const darkPath = this.getIconPath('dark', iconName);
-
-      if (fs.existsSync(lightPath) && fs.existsSync(darkPath)) {
-        return {
-          light: lightPath,
-          dark: darkPath
-        };
-      }
-      // If SVG files don't exist, fall through to default ThemeIcon
-    }
-
-    // Check if iconName is a valid built-in icon
-    if (this.isValidBuiltInIcon(iconName)) {
-      return new vscode.ThemeIcon(iconName);
-    } else {
-      return new vscode.ThemeIcon('circle-slash');
-    }
-  }
-  private getIconPath(theme: string, iconName: string): string {
-    return path.join(__dirname, '..', 'resources', theme, iconName);
-  }
-  private isValidBuiltInIcon(iconName: string): boolean {
-    // This is a partial list of built-in icons. You may need to update this list periodically.
-    const builtInIcons = [
-      'add', 'archive', 'arrow-both', 'arrow-down', 'arrow-left', 'arrow-right', 'arrow-up',
-      'beaker', 'bell', 'bold', 'book', 'bookmark', 'briefcase', 'broadcast', 'browser',
-      'bug', 'calendar', 'call-incoming', 'call-outgoing', 'case-sensitive', 'check',
-      'checklist', 'chevron-down', 'chevron-left', 'chevron-right', 'chevron-up', 'chrome-close',
-      'chrome-maximize', 'chrome-minimize', 'chrome-restore', 'circle-filled', 'circle-outline',
-      'circle-slash', 'circuit-board', 'clear-all', 'clippy', 'close-all', 'cloud-download',
-      'cloud-upload', 'code', 'collapse-all', 'color-mode', 'comment-discussion', 'compare-changes',
-      'credit-card', 'dash', 'dashboard', 'database', 'debug-alt', 'debug-breakpoint-conditional',
-      'debug-breakpoint-data', 'debug-breakpoint-function', 'debug-breakpoint-log',
-      'debug-breakpoint-unsupported', 'debug-console', 'debug-continue', 'debug-disconnect',
-      'debug-pause', 'debug-restart', 'debug-start', 'debug-step-back', 'debug-step-into',
-      'debug-step-out', 'debug-step-over', 'debug-stop', 'desktop-download', 'device-camera-video',
-      'device-camera', 'device-mobile', 'diff-added', 'diff-ignored', 'diff-modified', 'diff-removed',
-      'diff-renamed', 'discard', 'edit', 'editor-layout', 'ellipsis', 'empty-window', 'error',
-      'exclude', 'expand-all', 'extensions', 'eye-closed', 'eye', 'feedback', 'file-binary',
-      'file-code', 'file-media', 'file-pdf', 'file-submodule', 'file-symlink-directory',
-      'file-symlink-file', 'file-zip', 'files', 'filter', 'flame', 'fold-down', 'fold-up', 'folder',
-      'gear', 'gift', 'gist-secret', 'gist', 'git-commit', 'git-compare', 'git-merge', 'git-pull-request',
-      'github-action', 'github-alt', 'github-inverted', 'github', 'globe', 'go-to-file', 'grabber',
-      'graph', 'gripper', 'heart', 'home', 'horizontal-rule', 'hubot', 'inbox', 'info', 'issue-closed',
-      'issue-reopened', 'issues', 'italic', 'jersey', 'json', 'kebab-vertical', 'key', 'law',
-      'lightbulb-autofix', 'link-external', 'link', 'list-ordered', 'list-unordered', 'live-share',
-      'loading', 'location', 'mail-read', 'mail', 'markdown', 'megaphone', 'mention', 'milestone',
-      'mortar-board', 'move', 'multiple-windows', 'mute', 'new-file', 'new-folder', 'no-newline',
-      'note', 'octoface', 'open-preview', 'package', 'paintcan', 'pin', 'play-circle', 'play',
-      'plug', 'preserve-case', 'preview', 'project', 'pulse', 'question', 'quote', 'radio-tower',
-      'reactions', 'references', 'refresh', 'regex', 'remote-explorer', 'remote', 'remove', 'replace-all',
-      'replace', 'repo-clone', 'repo-force-push', 'repo-pull', 'repo-push', 'repo', 'report', 'request-changes',
-      'rocket', 'root-folder-opened', 'root-folder', 'rss', 'ruby', 'save-all', 'save-as', 'save',
-      'screen-full', 'screen-normal', 'search-stop', 'search', 'server-environment', 'server-process',
-      'server', 'settings-gear', 'settings', 'shield', 'sign-in', 'sign-out', 'smiley', 'sort-precedence',
-      'split-horizontal', 'split-vertical', 'squirrel', 'star-full', 'star-half', 'symbol-array',
-      'symbol-boolean', 'symbol-class', 'symbol-color', 'symbol-constant', 'symbol-enum-member',
-      'symbol-enum', 'symbol-event', 'symbol-field', 'symbol-file', 'symbol-interface', 'symbol-key',
-      'symbol-keyword', 'symbol-method', 'symbol-misc', 'symbol-namespace', 'symbol-numeric',
-      'symbol-operator', 'symbol-parameter', 'symbol-property', 'symbol-ruler', 'symbol-snippet',
-      'symbol-string', 'symbol-structure', 'symbol-variable', 'sync-ignored', 'sync', 'tag',
-      'tasklist', 'telescope', 'terminal', 'text-size', 'three-bars', 'thumbsdown', 'thumbsup',
-      'tools', 'trash', 'triangle-down', 'triangle-left', 'triangle-right', 'triangle-up', 'twitter',
-      'unfold', 'unlock', 'unmute', 'unverified', 'verified', 'versions', 'vm-active', 'vm-outline',
-      'vm-running', 'watch', 'whitespace', 'whole-word', 'window', 'word-wrap', 'zoom-in', 'zoom-out', 'type-hierarchy'
-    ];
-
-    return builtInIcons.includes(iconName);
+    this.iconPath = iconManager.getIcon(icon);
   }
 }

@@ -1,17 +1,20 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { IconManager } from './iconManager';
 
 export class MenusProvider implements vscode.TreeDataProvider<MenuNode> {
 
   pkgPath: string | undefined;
   pkgJson: any = undefined;
   hasPackageJson: boolean = false;
+  private iconManager: IconManager;
 
   constructor(
     public context: vscode.ExtensionContext,
     public readonly currentPath: string | undefined
   ) {
+    this.iconManager = new IconManager(context.extensionPath);
     if (currentPath) {
       this.pkgPath = path.join(currentPath, "package.json");
 
@@ -67,7 +70,8 @@ export class MenusProvider implements vscode.TreeDataProvider<MenuNode> {
           "",
           "",
           vscode.TreeItemCollapsibleState.None,
-          "error"
+          "error",
+          this.iconManager
         )
       ]);
     }
@@ -80,7 +84,8 @@ export class MenusProvider implements vscode.TreeDataProvider<MenuNode> {
           "",
           "",
           vscode.TreeItemCollapsibleState.None,
-          "info"
+          "info",
+          this.iconManager
         )
       ]);
     }
@@ -97,7 +102,8 @@ export class MenusProvider implements vscode.TreeDataProvider<MenuNode> {
             `${count} 项`,
             menuType,
             vscode.TreeItemCollapsibleState.Collapsed,
-            'list-tree'
+            'list-tree',
+            this.iconManager
           );
         })
       );
@@ -114,7 +120,8 @@ export class MenusProvider implements vscode.TreeDataProvider<MenuNode> {
             when,
             `${element.id}[${index}]`,
             vscode.TreeItemCollapsibleState.Collapsed,
-            'symbol-event'
+            'symbol-event',
+            this.iconManager
           );
         })
       );
@@ -130,20 +137,14 @@ export class MenusProvider implements vscode.TreeDataProvider<MenuNode> {
         Object.keys(menuItem).forEach(key => {
           const value = menuItem[key];
           let displayValue = '';
-          let icon = 'symbol-property';
 
           if (typeof value === 'object') {
             displayValue = JSON.stringify(value, null, 2);
-            icon = 'json';
-          } else if (typeof value === 'boolean') {
-            displayValue = String(value);
-            icon = 'symbol-boolean';
-          } else if (typeof value === 'string') {
-            displayValue = value;
-            icon = 'symbol-string';
           } else {
             displayValue = String(value);
           }
+
+          const icon = this.iconManager.getIconForPropertyType(value);
 
           details.push(
             new MenuNode(
@@ -152,7 +153,8 @@ export class MenusProvider implements vscode.TreeDataProvider<MenuNode> {
               displayValue,
               "",
               vscode.TreeItemCollapsibleState.None,
-              icon
+              icon,
+              this.iconManager
             )
           );
         });
@@ -257,12 +259,13 @@ class MenuNode extends vscode.TreeItem {
     public readonly description: string,
     public readonly id: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-    public readonly icon?: string,
+    public readonly icon: string | undefined,
+    private iconManager: IconManager,
     public command?: vscode.Command
   ) {
     super(name, collapsibleState);
     this.description = description;
-    this.iconPath = this.getIcon(this.icon);
+    this.iconPath = iconManager.getIcon(icon);
 
     switch (type) {
       case NodeType.menuType:
@@ -285,12 +288,5 @@ class MenuNode extends vscode.TreeItem {
     if (type === NodeType.property) {
       this.tooltip = `${name}: ${description}`;
     }
-  }
-
-  getIcon(iconName: string | undefined): vscode.ThemeIcon {
-    if (!iconName) {
-      return new vscode.ThemeIcon('circle-slash');
-    }
-    return new vscode.ThemeIcon(iconName);
   }
 }
