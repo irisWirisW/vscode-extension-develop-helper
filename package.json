@@ -39,18 +39,11 @@
       "vedh": [
         {
           "id": "vedh.views",
-          "name": "view管理",
-          "icon": "type-hierarchy",
-          "contextualTitle": "asdasd",
-          "initialSize": 1,
-          "accessibilityHelpContent": "",
-          "type": "tree",
-          "visibility": "collapsed"
+          "name": "view管理"
         },
         {
           "id": "vedh.commands",
-          "name": "commands管理",
-          "icon": "type-hierarchy"
+          "name": "commands管理"
         }
       ],
       "test": [
@@ -89,8 +82,23 @@
         },
         {
           "command": "vedh.editCommand",
-          "when": "view == vedh.commands && viewItem != error && viewItem != info",
+          "when": "view == vedh.commands && viewItem == command",
           "group": "inline"
+        },
+        {
+          "command": "vedh.editCommand",
+          "when": "view == vedh.commands && viewItem == property",
+          "group": "inline"
+        },
+        {
+          "command": "vedh.copyCommandId",
+          "when": "view == vedh.commands && viewItem == command",
+          "group": "copy"
+        },
+        {
+          "command": "vedh.copyCommandConfig",
+          "when": "view == vedh.commands && viewItem == command",
+          "group": "copy"
         }
       ]
     },
@@ -120,12 +128,30 @@
         }
       },
       {
+        "command": "vedh.editNode",
+        "title": "Edit Node",
+        "icon": {
+          "light": "resources/light/edit.svg",
+          "dark": "resources/dark/edit.svg"
+        }
+      },
+      {
         "command": "vedh.editCommand",
         "title": "Edit Command",
         "icon": {
           "light": "resources/light/edit.svg",
           "dark": "resources/dark/edit.svg"
         }
+      },
+      {
+        "command": "vedh.copyCommandId",
+        "title": "复制命令 ID",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "vedh.copyCommandConfig",
+        "title": "复制命令配置",
+        "icon": "$(json)"
       }
     ]
   },
