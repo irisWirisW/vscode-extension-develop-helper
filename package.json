@@ -38,12 +38,20 @@
     "views": {
       "vedh": [
         {
+          "id": "vedh.viewsContainers",
+          "name": "viewsContainers管理"
+        },
+        {
           "id": "vedh.views",
-          "name": "view管理"
+          "name": "views管理"
         },
         {
           "id": "vedh.commands",
           "name": "commands管理"
+        },
+        {
+          "id": "vedh.menus",
+          "name": "menus管理"
         }
       ],
       "test": [
@@ -60,21 +68,32 @@
     "menus": {
       "view/title": [
         {
+          "command": "vedh.refreshViewsContainers",
+          "when": "view == vedh.viewsContainers",
+          "group": "navigation"
+        },
+        {
           "command": "vedh.refresh",
           "when": "view == vedh.views",
           "group": "navigation"
         },
         {
-          "command": "vedh.refresh",
-          "when": "view == vedh.views"
-        },
-        {
           "command": "vedh.refreshCommands",
           "when": "view == vedh.commands",
+          "group": "navigation"
+        },
+        {
+          "command": "vedh.refreshMenus",
+          "when": "view == vedh.menus",
           "group": "navigation"
         }
       ],
       "view/item/context": [
+        {
+          "command": "vedh.editViewContainer",
+          "when": "view == vedh.viewsContainers && viewItem == container",
+          "group": "inline"
+        },
         {
           "command": "vedh.editNode",
           "when": "view == vedh.views",
@@ -99,6 +118,11 @@
           "command": "vedh.copyCommandConfig",
           "when": "view == vedh.commands && viewItem == command",
           "group": "copy"
+        },
+        {
+          "command": "vedh.editMenu",
+          "when": "view == vedh.menus && viewItem == menuItem",
+          "group": "inline"
         }
       ]
     },
@@ -106,18 +130,12 @@
       {
         "command": "vedh.refresh",
         "title": "Refresh",
-        "icon": {
-          "light": "resources/light/refresh.svg",
-          "dark": "resources/dark/refresh.svg"
-        }
+        "icon": "$(sync)"
       },
       {
         "command": "vedh.refreshCommands",
         "title": "Refresh Commands",
-        "icon": {
-          "light": "resources/light/refresh.svg",
-          "dark": "resources/dark/refresh.svg"
-        }
+        "icon": "$(sync)"
       },
       {
         "command": "vedh.edit",
@@ -152,6 +170,32 @@
         "command": "vedh.copyCommandConfig",
         "title": "复制命令配置",
         "icon": "$(json)"
+      },
+      {
+        "command": "vedh.refreshViewsContainers",
+        "title": "Refresh ViewsContainers",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "vedh.editViewContainer",
+        "title": "Edit ViewContainer",
+        "icon": {
+          "light": "resources/light/edit.svg",
+          "dark": "resources/dark/edit.svg"
+        }
+      },
+      {
+        "command": "vedh.refreshMenus",
+        "title": "Refresh Menus",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "vedh.editMenu",
+        "title": "Edit Menu",
+        "icon": {
+          "light": "resources/light/edit.svg",
+          "dark": "resources/dark/edit.svg"
+        }
       }
     ]
   },
