@@ -1,8 +1,22 @@
 {
   "name": "vscode-extension-develop-helper",
-  "displayName": "vscode-extension-develop-helper",
-  "description": "aaaaaaa",
-  "version": "0.1.1",
+  "displayName": "VSCode Extension Develop Helper",
+  "description": "A helper tool for VSCode extension development that visualizes package.json configurations",
+  "version": "0.1.21",
+  "publisher": "1risW",
+  "author": "1risW",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/irisWirisW/vscode-extension-develop-helper.git"
+  },
+  "keywords": [
+    "vscode",
+    "extension",
+    "development",
+    "helper",
+    "package.json"
+  ],
   "engines": {
     "vscode": "^1.94.0"
   },
@@ -26,8 +40,12 @@
         {
           "id": "vedh.views",
           "name": "view管理",
-          "when": "true",
-          "icon": "type-hierarchy"
+          "icon": "type-hierarchy",
+          "contextualTitle": "asdasd",
+          "initialSize": 1,
+          "accessibilityHelpContent": "",
+          "type": "tree",
+          "visibility": "collapsed"
         },
         {
           "id": "vedh.commands",
@@ -46,16 +64,83 @@
         }
       ]
     },
-    "commands": []
+    "menus": {
+      "view/title": [
+        {
+          "command": "vedh.refresh",
+          "when": "view == vedh.views",
+          "group": "navigation"
+        },
+        {
+          "command": "vedh.refresh",
+          "when": "view == vedh.views"
+        },
+        {
+          "command": "vedh.refreshCommands",
+          "when": "view == vedh.commands",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "vedh.editNode",
+          "when": "view == vedh.views",
+          "group": "inline"
+        },
+        {
+          "command": "vedh.editCommand",
+          "when": "view == vedh.commands && viewItem != error && viewItem != info",
+          "group": "inline"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "vedh.refresh",
+        "title": "Refresh",
+        "icon": {
+          "light": "resources/light/refresh.svg",
+          "dark": "resources/dark/refresh.svg"
+        }
+      },
+      {
+        "command": "vedh.refreshCommands",
+        "title": "Refresh Commands",
+        "icon": {
+          "light": "resources/light/refresh.svg",
+          "dark": "resources/dark/refresh.svg"
+        }
+      },
+      {
+        "command": "vedh.edit",
+        "title": "Edit",
+        "icon": {
+          "light": "resources/light/edit.svg",
+          "dark": "resources/dark/edit.svg"
+        }
+      },
+      {
+        "command": "vedh.editCommand",
+        "title": "Edit Command",
+        "icon": {
+          "light": "resources/light/edit.svg",
+          "dark": "resources/dark/edit.svg"
+        }
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
+    "clean": "rm -rf out",
+    "rebuild": "npm run clean && npm run compile",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
     "test": "vscode-test",
-    "update-version": "node updateVersion.js && vsce package --allow-missing-repository -o ./out"
+    "package": "vsce package --allow-missing-repository -o ./out",
+    "update-version": "node updateVersion.js && npm run package"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.8",
@@ -65,6 +150,7 @@
     "@typescript-eslint/parser": "^8.7.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
+    "@vscode/vsce": "^3.0.0",
     "eslint": "^9.11.1",
     "typescript": "^5.5.1-rc"
   }
