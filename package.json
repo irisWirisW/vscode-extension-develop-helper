@@ -2,7 +2,7 @@
   "name": "vscode-extension-develop-helper",
   "displayName": "VSCode Extension Develop Helper",
   "description": "A helper tool for VSCode extension development that visualizes package.json configurations",
-  "version": "0.1.21",
+  "version": "0.1.22",
   "publisher": "1risW",
   "author": "1risW",
   "license": "MIT",
@@ -210,7 +210,12 @@
     "lint:fix": "eslint src --fix",
     "test": "vscode-test",
     "package": "vsce package --allow-missing-repository -o ./out",
-    "update-version": "node updateVersion.js && npm run package"
+    "version:patch": "npm version patch --no-git-tag-version",
+    "version:minor": "npm version minor --no-git-tag-version",
+    "version:major": "npm version major --no-git-tag-version",
+    "release:patch": "npm run version:patch && npm run package",
+    "release:minor": "npm run version:minor && npm run package",
+    "release:major": "npm run version:major && npm run package"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.8",
