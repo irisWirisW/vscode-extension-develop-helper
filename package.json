@@ -140,26 +140,17 @@
       {
         "command": "vedh.edit",
         "title": "Edit",
-        "icon": {
-          "light": "resources/light/edit.svg",
-          "dark": "resources/dark/edit.svg"
-        }
+        "icon": "$(edit)"
       },
       {
         "command": "vedh.editNode",
         "title": "Edit Node",
-        "icon": {
-          "light": "resources/light/edit.svg",
-          "dark": "resources/dark/edit.svg"
-        }
+        "icon": "$(edit)"
       },
       {
         "command": "vedh.editCommand",
         "title": "Edit Command",
-        "icon": {
-          "light": "resources/light/edit.svg",
-          "dark": "resources/dark/edit.svg"
-        }
+        "icon": "$(edit)"
       },
       {
         "command": "vedh.copyCommandId",
@@ -179,10 +170,7 @@
       {
         "command": "vedh.editViewContainer",
         "title": "Edit ViewContainer",
-        "icon": {
-          "light": "resources/light/edit.svg",
-          "dark": "resources/dark/edit.svg"
-        }
+        "icon": "$(edit)"
       },
       {
         "command": "vedh.refreshMenus",
@@ -192,10 +180,7 @@
       {
         "command": "vedh.editMenu",
         "title": "Edit Menu",
-        "icon": {
-          "light": "resources/light/edit.svg",
-          "dark": "resources/dark/edit.svg"
-        }
+        "icon": "$(edit)"
       }
     ]
   },
