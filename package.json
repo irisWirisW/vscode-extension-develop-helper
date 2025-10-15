@@ -6,6 +6,7 @@
   "publisher": "1risW",
   "author": "1risW",
   "license": "MIT",
+  "main": "./out/extension.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/irisWirisW/vscode-extension-develop-helper.git"
@@ -21,10 +22,20 @@
     "vscode": "^1.94.0"
   },
   "categories": [
-    "Other"
+    "Visualization"
   ],
-  "activationEvents": [],
-  "main": "./out/extension.js",
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "npm version patch --no-git-tag-version && tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "clean": "rm -rf out",
+    "rebuild": "npm run clean && npm run compile",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "test": "vscode-test",
+    "package": "npm version minor --no-git-tag-version && vsce package --allow-missing-repository -o ./out"
+  },
   "contributes": {
     "viewsContainers": {
       "activitybar": [
@@ -63,12 +74,6 @@
           "name": "menus管理",
           "collapsible": "collapsed",
           "icon": "resources/icon/icon.svg"
-        }
-      ],
-      "test": [
-        {
-          "id": "aba",
-          "name": "sd"
         }
       ]
     },
@@ -225,18 +230,6 @@
         "icon": "$(edit)"
       }
     ]
-  },
-  "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "npm version patch --no-git-tag-version && tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "clean": "rm -rf out",
-    "rebuild": "npm run clean && npm run compile",
-    "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src",
-    "lint:fix": "eslint src --fix",
-    "test": "vscode-test",
-    "package": "npm version minor --no-git-tag-version && vsce package --allow-missing-repository -o ./out"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.8",
