@@ -59,6 +59,36 @@ export function activate(context: vscode.ExtensionContext) {
 		showCollapseAll: true,
 		canSelectMany: false,
 	});
+
+	// 监听活动编辑器变化，当切换到 package.json 时刷新所有 treeview
+	context.subscriptions.push(
+		vscode.window.onDidChangeActiveTextEditor(editor => {
+			if (editor && editor.document.fileName.endsWith('package.json')) {
+				console.log('📝 Switched to package.json, refreshing all tree views');
+				// 刷新所有 provider
+				viewsContainersProvider.refresh();
+				viewProvider.refresh();
+				commandsProvider.refresh();
+				menusProvider.refresh();
+				keybindingsProvider.refresh();
+			}
+		})
+	);
+
+	// 监听 package.json 文件保存，自动刷新所有 treeview
+	context.subscriptions.push(
+		vscode.workspace.onDidSaveTextDocument(document => {
+			if (document.fileName.endsWith('package.json')) {
+				console.log('💾 package.json saved, refreshing all tree views');
+				// 刷新所有 provider
+				viewsContainersProvider.refresh();
+				viewProvider.refresh();
+				commandsProvider.refresh();
+				menusProvider.refresh();
+				keybindingsProvider.refresh();
+			}
+		})
+	);
 }
 
 export function deactivate() {

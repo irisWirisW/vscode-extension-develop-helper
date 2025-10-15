@@ -61,21 +61,18 @@
         {
           "id": "vedh.viewsContainers",
           "name": "viewsContainers管理",
-          "when": "resourceFilename == package.json",
           "collapsible": "collapsed",
           "icon": "resources/icon/icon.svg"
         },
         {
           "id": "vedh.views",
           "name": "views管理",
-          "when": "resourceFilename == package.json",
           "collapsible": "collapsed",
           "icon": "resources/icon/icon.svg"
         },
         {
           "id": "vedh.commands",
           "name": "commands管理",
-          "when": "resourceFilename == package.json",
           "collapsible": "collapsed",
           "icon": "resources/icon/icon.svg"
         },
@@ -88,7 +85,6 @@
         {
           "id": "vedh.keybindings",
           "name": "keybindings管理",
-          "when": "resourceFilename == package.json",
           "collapsible": "collapsed",
           "icon": "resources/icon/icon.svg"
         }
@@ -187,6 +183,26 @@
           "command": "vedh.keybindings.copy",
           "when": "view == vedh.keybindings && viewItem == keybinding",
           "group": "copy"
+        },
+        {
+          "command": "vedh.keybindings.recordKey",
+          "when": "view == vedh.keybindings && viewItem == keybinding",
+          "group": "edit"
+        },
+        {
+          "command": "vedh.keybindings.recordMac",
+          "when": "view == vedh.keybindings && viewItem == keybinding",
+          "group": "edit"
+        },
+        {
+          "command": "vedh.keybindings.recordKey",
+          "when": "view == vedh.keybindings && viewItem == property",
+          "group": "edit"
+        },
+        {
+          "command": "vedh.keybindings.recordMac",
+          "when": "view == vedh.keybindings && viewItem == property",
+          "group": "edit"
         }
       ]
     },
@@ -280,14 +296,23 @@
         "command": "vedh.keybindings.copy",
         "title": "复制快捷键配置",
         "icon": "$(copy)"
+      },
+      {
+        "command": "vedh.keybindings.recordKey",
+        "title": "录制快捷键 (Windows/Linux)",
+        "icon": "$(record-keys)"
+      },
+      {
+        "command": "vedh.keybindings.recordMac",
+        "title": "录制快捷键 (macOS)",
+        "icon": "$(record-keys)"
       }
     ],
     "keybindings": [
       {
         "command": "vedh.toggleNotifications",
         "key": "ctrl+alt+n",
-        "mac": "cmd+alt+n",
-        "when": "editorTextFocus || !editorTextFocus"
+        "mac": "cmd+alt+n"
       }
     ]
   },

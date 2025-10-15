@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { IconManager } from './iconManager';
 import { showNotification } from './utils/notificationManager';
+import { KeybindingRecorder } from './utils/keybindingRecorder';
 
 export class KeybindingsProvider implements vscode.TreeDataProvider<KeybindingNode> {
 
@@ -50,6 +51,20 @@ export class KeybindingsProvider implements vscode.TreeDataProvider<KeybindingNo
     context.subscriptions.push(
       vscode.commands.registerCommand('vedh.keybindings.copy', (node: KeybindingNode) => {
         this.copyKeybinding(node);
+      })
+    );
+
+    // 注册录制快捷键命令（编辑 key 属性）
+    context.subscriptions.push(
+      vscode.commands.registerCommand('vedh.keybindings.recordKey', (node: KeybindingNode) => {
+        this.recordKeybinding(node, 'key');
+      })
+    );
+
+    // 注册录制快捷键命令（编辑 mac 属性）
+    context.subscriptions.push(
+      vscode.commands.registerCommand('vedh.keybindings.recordMac', (node: KeybindingNode) => {
+        this.recordKeybinding(node, 'mac');
       })
     );
   }
@@ -261,7 +276,255 @@ export class KeybindingsProvider implements vscode.TreeDataProvider<KeybindingNo
       vscode.env.clipboard.writeText(configText).then(() => {
         showNotification(`已复制快捷键配置: ${node.name}`);
       });
+    } else if (node.type === NodeType.property && node.value) {
+      // 复制具体的快捷键值
+      vscode.env.clipboard.writeText(node.value).then(() => {
+        showNotification(`已复制快捷键: ${node.value}`);
+      });
     }
+  }
+
+  /**
+   * 录制并更新快捷键
+   */
+  async recordKeybinding(node: KeybindingNode, platform: 'key' | 'mac'): Promise<void> {
+    if (!this.pkgPath) {
+      vscode.window.showErrorMessage('无法找到 package.json 文件');
+      return;
+    }
+
+    // 确定是从哪个节点触发的
+    let keybindingNode: KeybindingNode | undefined;
+    let propertyName: 'key' | 'mac' = platform;
+
+    if (node.type === NodeType.keybinding) {
+      // 从快捷键节点触发
+      keybindingNode = node;
+    } else if (node.type === NodeType.property && (node.name === 'key' || node.name === 'mac')) {
+      // 从属性节点触发，需要找到父节点
+      keybindingNode = this.findParentKeybindingNode(node);
+      propertyName = node.name as 'key' | 'mac';
+    } else {
+      vscode.window.showWarningMessage('请在快捷键节点或 key/mac 属性节点上使用此功能');
+      return;
+    }
+
+    if (!keybindingNode) {
+      vscode.window.showErrorMessage('无法找到快捷键配置');
+      return;
+    }
+
+    try {
+      // 显示录制界面
+      const recordedKey = await KeybindingRecorder.recordKeybinding(propertyName);
+
+      if (!recordedKey) {
+        return; // 用户取消
+      }
+
+      // 验证快捷键
+      const validation = KeybindingRecorder.validateKeybinding(recordedKey);
+      if (!validation.valid) {
+        vscode.window.showErrorMessage(`快捷键无效: ${validation.message}`);
+        return;
+      }
+
+      // 更新 package.json
+      await this.updateKeybindingInPackageJson(keybindingNode, propertyName, recordedKey);
+
+      showNotification(`已更新 ${propertyName} 为: ${recordedKey}`);
+      this.refresh();
+    } catch (error) {
+      vscode.window.showErrorMessage(`更新失败: ${error}`);
+    }
+  }
+
+  /**
+   * 在 package.json 中更新快捷键
+   */
+  private async updateKeybindingInPackageJson(
+    node: KeybindingNode,
+    property: 'key' | 'mac',
+    newValue: string
+  ): Promise<void> {
+    if (!this.pkgPath || node.index === undefined) {
+      return;
+    }
+
+    const doc = await vscode.workspace.openTextDocument(this.pkgPath);
+    const text = doc.getText();
+    const keybindings = this.pkgJson.contributes.keybindings;
+    const targetKeybinding = keybindings[node.index];
+
+    if (!targetKeybinding) {
+      throw new Error('找不到目标快捷键配置');
+    }
+
+    // 构建搜索模式 - 查找整个快捷键对象
+    const kbString = JSON.stringify(targetKeybinding);
+    const kbIndex = text.indexOf(kbString);
+
+    if (kbIndex === -1) {
+      // 如果精确匹配失败，尝试更灵活的匹配
+      await this.updateKeybindingFlexible(doc, targetKeybinding, property, newValue);
+      return;
+    }
+
+    // 在快捷键对象内查找属性
+    const kbEndIndex = kbIndex + kbString.length;
+    const kbText = text.substring(kbIndex, kbEndIndex);
+
+    // 检查属性是否存在
+    const propertyPattern = new RegExp(`"${property}"\\s*:\\s*"([^"]*)"`, 'g');
+    const match = propertyPattern.exec(kbText);
+
+    const editor = await vscode.window.showTextDocument(doc);
+
+    if (match && match.index !== undefined) {
+      // 属性存在，替换值
+      const absoluteIndex = kbIndex + match.index;
+      const valueStartIndex = absoluteIndex + match[0].indexOf('"', match[0].indexOf(':')) + 1;
+      const valueEndIndex = valueStartIndex + match[1].length;
+
+      const startPos = doc.positionAt(valueStartIndex);
+      const endPos = doc.positionAt(valueEndIndex);
+
+      await editor.edit(editBuilder => {
+        editBuilder.replace(new vscode.Range(startPos, endPos), newValue);
+      });
+    } else {
+      // 属性不存在，需要添加
+      await this.addKeybindingProperty(editor, doc, kbIndex, kbText, property, newValue);
+    }
+
+    await doc.save();
+  }
+
+  /**
+   * 添加快捷键属性
+   */
+  private async addKeybindingProperty(
+    editor: vscode.TextEditor,
+    doc: vscode.TextDocument,
+    kbStartIndex: number,
+    kbText: string,
+    property: 'key' | 'mac',
+    value: string
+  ): Promise<void> {
+    // 查找最后一个属性的位置
+    const lastPropertyMatch = kbText.match(/,?\s*"[^"]+"\s*:\s*"[^"]*"/g);
+
+    if (lastPropertyMatch && lastPropertyMatch.length > 0) {
+      // 在最后一个属性后添加
+      const lastProperty = lastPropertyMatch[lastPropertyMatch.length - 1];
+      const lastPropertyIndex = kbText.lastIndexOf(lastProperty);
+      const insertIndex = kbStartIndex + lastPropertyIndex + lastProperty.length;
+      const insertPos = doc.positionAt(insertIndex);
+
+      // 确定缩进
+      const lineText = doc.lineAt(insertPos.line).text;
+      const baseIndent = lineText.match(/^\s*/)?.[0] || '      ';
+
+      const newProperty = `,\n${baseIndent}"${property}": "${value}"`;
+
+      await editor.edit(editBuilder => {
+        editBuilder.insert(insertPos, newProperty);
+      });
+    }
+  }
+
+  /**
+   * 灵活更新快捷键（当精确匹配失败时）
+   */
+  private async updateKeybindingFlexible(
+    doc: vscode.TextDocument,
+    targetKeybinding: any,
+    property: 'key' | 'mac',
+    newValue: string
+  ): Promise<void> {
+    // 通过命令 ID 查找
+    const text = doc.getText();
+    const commandId = targetKeybinding.command;
+
+    if (!commandId) {
+      throw new Error('快捷键配置缺少 command 属性');
+    }
+
+    // 在 keybindings 数组中查找包含此 command 的对象
+    const keybindingsMatch = text.match(/"keybindings"\s*:\s*\[/);
+    if (!keybindingsMatch || keybindingsMatch.index === undefined) {
+      throw new Error('无法找到 keybindings 配置');
+    }
+
+    // 查找特定命令的快捷键对象
+    const pattern = new RegExp(
+      `\\{[^}]*"command"\\s*:\\s*"${commandId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^}]*\\}`,
+      'gs'
+    );
+
+    const matches = [...text.matchAll(pattern)];
+
+    if (matches.length === 0) {
+      throw new Error(`找不到命令 "${commandId}" 的快捷键配置`);
+    }
+
+    // 如果有多个匹配，让用户选择
+    const targetMatch = matches[0]; // 暂时使用第一个匹配
+
+    const editor = await vscode.window.showTextDocument(doc);
+    const matchStartIndex = targetMatch.index!;
+    const matchText = targetMatch[0];
+
+    // 在匹配的对象中查找或添加属性
+    const propertyPattern = new RegExp(`"${property}"\\s*:\\s*"([^"]*)"`, 'g');
+    const propMatch = propertyPattern.exec(matchText);
+
+    if (propMatch && propMatch.index !== undefined) {
+      // 替换现有值
+      const valueStartIndex = matchStartIndex + propMatch.index + propMatch[0].indexOf('"', propMatch[0].indexOf(':')) + 1;
+      const valueEndIndex = valueStartIndex + propMatch[1].length;
+
+      const startPos = doc.positionAt(valueStartIndex);
+      const endPos = doc.positionAt(valueEndIndex);
+
+      await editor.edit(editBuilder => {
+        editBuilder.replace(new vscode.Range(startPos, endPos), newValue);
+      });
+    } else {
+      // 添加新属性
+      await this.addKeybindingProperty(editor, doc, matchStartIndex, matchText, property, newValue);
+    }
+  }
+
+  /**
+   * 查找属性节点的父快捷键节点
+   */
+  private findParentKeybindingNode(propertyNode: KeybindingNode): KeybindingNode | undefined {
+    // 在当前加载的快捷键列表中查找
+    const keybindings = this.pkgJson?.contributes?.keybindings;
+    if (!keybindings) {
+      return undefined;
+    }
+
+    // 通过属性值匹配父节点
+    for (let i = 0; i < keybindings.length; i++) {
+      const kb = keybindings[i];
+      if (kb[propertyNode.name] === propertyNode.value) {
+        return new KeybindingNode(
+          NodeType.keybinding,
+          kb.command || `Keybinding ${i + 1}`,
+          kb.command || '',
+          '',
+          vscode.TreeItemCollapsibleState.Collapsed,
+          "keybinding",
+          this.iconManager,
+          kb,
+          i
+        );
+      }
+    }
+
+    return undefined;
   }
 }
 
