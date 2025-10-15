@@ -30,14 +30,14 @@ export class ViewsContainersProvider implements vscode.TreeDataProvider<ViewCont
 
     // 注册编辑命令
     context.subscriptions.push(
-      vscode.commands.registerCommand('vedh.editViewContainer', (node: ViewContainerNode) => {
+      vscode.commands.registerCommand('vedh.viewsContainers.edit', (node: ViewContainerNode) => {
         this.editViewContainer(node);
       })
     );
 
     // 注册刷新命令
     context.subscriptions.push(
-      vscode.commands.registerCommand('vedh.refreshViewsContainers', () => {
+      vscode.commands.registerCommand('vedh.viewsContainers.refresh', () => {
         this.refresh();
       })
     );
@@ -176,7 +176,7 @@ export class ViewsContainersProvider implements vscode.TreeDataProvider<ViewCont
     if (element.type === NodeType.container) {
       const treeItem = element;
       treeItem.command = {
-        command: 'vedh.editViewContainer',
+        command: 'vedh.viewsContainers.edit',
         title: 'Edit',
         arguments: [element]
       };

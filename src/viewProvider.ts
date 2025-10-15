@@ -31,28 +31,28 @@ export class ViewProvider implements vscode.TreeDataProvider<nodeView> {
 
     // 注册编辑命令
     context.subscriptions.push(
-      vscode.commands.registerCommand('vedh.editNode', (node: nodeView) => {
+      vscode.commands.registerCommand('vedh.views.edit', (node: nodeView) => {
         this.editNode(node);
       })
     );
 
     // 注册刷新命令
     context.subscriptions.push(
-      vscode.commands.registerCommand('vedh.refresh', () => {
+      vscode.commands.registerCommand('vedh.views.refresh', () => {
         this.refresh();
       })
     );
 
     // 注册新增 view 命令
     context.subscriptions.push(
-      vscode.commands.registerCommand('vedh.addView', () => {
+      vscode.commands.registerCommand('vedh.views.add', () => {
         this.addView();
       })
     );
 
     // 注册删除 view 命令
     context.subscriptions.push(
-      vscode.commands.registerCommand('vedh.deleteView', (node: nodeView) => {
+      vscode.commands.registerCommand('vedh.views.delete', (node: nodeView) => {
         this.deleteView(node);
       })
     );
@@ -143,7 +143,7 @@ export class ViewProvider implements vscode.TreeDataProvider<nodeView> {
   getTreeItem(element: nodeView): nodeView {
     const treeItem = element;
     treeItem.command = {
-      command: 'vedh.editNode',
+      command: 'vedh.views.edit',
       title: 'Edit',
       arguments: [element]
     };

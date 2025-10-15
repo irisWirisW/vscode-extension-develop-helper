@@ -10,7 +10,7 @@ export class CodeNavigator {
 
   /**
    * 查找命令注册的位置
-   * @param commandId 命令 ID（如 'vedh.refresh'）
+   * @param commandId 命令 ID（如 'vedh.views.refresh'）
    * @param workspacePath 工作区路径
    * @returns 命令注册的位置信息
    */

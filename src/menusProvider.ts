@@ -30,14 +30,14 @@ export class MenusProvider implements vscode.TreeDataProvider<MenuNode> {
 
     // 注册编辑命令
     context.subscriptions.push(
-      vscode.commands.registerCommand('vedh.editMenu', (node: MenuNode) => {
+      vscode.commands.registerCommand('vedh.menus.edit', (node: MenuNode) => {
         this.editMenu(node);
       })
     );
 
     // 注册刷新命令
     context.subscriptions.push(
-      vscode.commands.registerCommand('vedh.refreshMenus', () => {
+      vscode.commands.registerCommand('vedh.menus.refresh', () => {
         this.refresh();
       })
     );
@@ -174,7 +174,7 @@ export class MenusProvider implements vscode.TreeDataProvider<MenuNode> {
     if (element.type === NodeType.menuItem) {
       const treeItem = element;
       treeItem.command = {
-        command: 'vedh.editMenu',
+        command: 'vedh.menus.edit',
         title: 'Edit',
         arguments: [element]
       };

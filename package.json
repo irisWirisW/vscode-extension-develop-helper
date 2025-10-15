@@ -75,79 +75,79 @@
     "menus": {
       "view/title": [
         {
-          "command": "vedh.refreshViewsContainers",
+          "command": "vedh.viewsContainers.refresh",
           "when": "view == vedh.viewsContainers",
           "group": "navigation"
         },
         {
-          "command": "vedh.addView",
+          "command": "vedh.views.add",
           "when": "view == vedh.views",
           "group": "navigation"
         },
         {
-          "command": "vedh.refresh",
+          "command": "vedh.views.refresh",
           "when": "view == vedh.views",
           "group": "navigation"
         },
         {
-          "command": "vedh.refreshCommands",
+          "command": "vedh.commands.refresh",
           "when": "view == vedh.commands",
           "group": "navigation"
         },
         {
-          "command": "vedh.refreshMenus",
+          "command": "vedh.menus.refresh",
           "when": "view == vedh.menus",
           "group": "navigation"
         }
       ],
       "view/item/context": [
         {
-          "command": "vedh.editViewContainer",
+          "command": "vedh.viewsContainers.edit",
           "when": "view == vedh.viewsContainers && viewItem == container",
           "group": "inline"
         },
         {
-          "command": "vedh.editNode",
+          "command": "vedh.views.edit",
           "when": "view == vedh.views",
           "group": "inline"
         },
         {
-          "command": "vedh.deleteView",
+          "command": "vedh.views.delete",
           "when": "view == vedh.views && viewItem == level1",
           "group": "inline"
         },
         {
-          "command": "vedh.deleteView",
+          "command": "vedh.views.delete",
           "when": "view == vedh.views && viewItem == level2",
           "group": "inline"
         },
         {
-          "command": "vedh.editCommand",
+          "command": "vedh.commands.edit",
           "when": "view == vedh.commands && viewItem == command",
           "group": "inline"
         },
         {
-          "command": "vedh.editCommand",
+          "command": "vedh.commands.edit",
           "when": "view == vedh.commands && viewItem == property",
           "group": "inline"
         },
         {
-          "command": "vedh.copyCommandId",
+          "command": "vedh.commands.copy.id",
           "when": "view == vedh.commands && viewItem == command",
           "group": "copy"
         },
         {
-          "command": "vedh.copyCommandConfig",
+          "command": "vedh.commands.copy.config",
           "when": "view == vedh.commands && viewItem == command",
           "group": "copy"
         },
         {
-          "command": "vedh.gotoCommandRegistration",
+          "command": "vedh.commands.goto.registration",
           "when": "view == vedh.commands && viewItem == command",
           "group": "inline"
         },
         {
-          "command": "vedh.editMenu",
+          "command": "vedh.menus.edit",
           "when": "view == vedh.menus && viewItem == menuItem",
           "group": "inline"
         }
@@ -155,74 +155,74 @@
     },
     "commands": [
       {
-        "command": "vedh.refresh",
-        "title": "Refresh",
+        "command": "vedh.views.refresh",
+        "title": "Refresh Views",
         "icon": "$(sync)"
       },
       {
-        "command": "vedh.refreshCommands",
-        "title": "Refresh Commands",
-        "icon": "$(sync)"
-      },
-      {
-        "command": "vedh.edit",
-        "title": "Edit",
-        "icon": "$(edit)"
-      },
-      {
-        "command": "vedh.editNode",
-        "title": "Edit Node",
-        "icon": "$(edit)"
-      },
-      {
-        "command": "vedh.editCommand",
-        "title": "Edit Command",
-        "icon": "$(edit)"
-      },
-      {
-        "command": "vedh.copyCommandId",
-        "title": "复制命令 ID",
-        "icon": "$(copy)"
-      },
-      {
-        "command": "vedh.copyCommandConfig",
-        "title": "复制命令配置",
-        "icon": "$(json)"
-      },
-      {
-        "command": "vedh.refreshViewsContainers",
-        "title": "Refresh ViewsContainers",
-        "icon": "$(sync)"
-      },
-      {
-        "command": "vedh.editViewContainer",
-        "title": "Edit ViewContainer",
-        "icon": "$(edit)"
-      },
-      {
-        "command": "vedh.refreshMenus",
-        "title": "Refresh Menus",
-        "icon": "$(sync)"
-      },
-      {
-        "command": "vedh.editMenu",
-        "title": "Edit Menu",
-        "icon": "$(edit)"
-      },
-      {
-        "command": "vedh.addView",
+        "command": "vedh.views.add",
         "title": "Add New View",
         "icon": "$(add)"
       },
       {
-        "command": "vedh.deleteView",
+        "command": "vedh.views.delete",
         "title": "删除 View",
         "icon": "$(trash)"
       },
       {
-        "command": "vedh.gotoCommandRegistration",
+        "command": "vedh.views.edit",
+        "title": "Edit Node",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "vedh.commands.refresh",
+        "title": "Refresh Commands",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "vedh.commands.edit",
+        "title": "Edit Command",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "vedh.commands.copy.id",
+        "title": "复制命令 ID",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "vedh.commands.copy.config",
+        "title": "复制命令配置",
+        "icon": "$(json)"
+      },
+      {
+        "command": "vedh.commands.goto.registration",
         "title": "跳转到命令注册位置",
         "icon": "$(go-to-file)"
+      },
+      {
+        "command": "vedh.viewsContainers.refresh",
+        "title": "Refresh ViewsContainers",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "vedh.viewsContainers.edit",
+        "title": "Edit ViewContainer",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "vedh.menus.refresh",
+        "title": "Refresh Menus",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "vedh.menus.edit",
+        "title": "Edit Menu",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "vedh.general.edit",
+        "title": "Edit",
+        "icon": "$(edit)"
       }
     ]
   },

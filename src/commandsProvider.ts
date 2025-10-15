@@ -31,35 +31,35 @@ export class CommandsProvider implements vscode.TreeDataProvider<CommandNode> {
 
     // 注册编辑命令
     context.subscriptions.push(
-      vscode.commands.registerCommand('vedh.editCommand', (node: CommandNode) => {
+      vscode.commands.registerCommand('vedh.commands.edit', (node: CommandNode) => {
         this.editCommand(node);
       })
     );
 
     // 注册刷新命令
     context.subscriptions.push(
-      vscode.commands.registerCommand('vedh.refreshCommands', () => {
+      vscode.commands.registerCommand('vedh.commands.refresh', () => {
         this.refresh();
       })
     );
 
     // 注册复制命令 ID
     context.subscriptions.push(
-      vscode.commands.registerCommand('vedh.copyCommandId', (node: CommandNode) => {
+      vscode.commands.registerCommand('vedh.commands.copy.id', (node: CommandNode) => {
         this.copyCommandId(node);
       })
     );
 
     // 注册复制命令配置
     context.subscriptions.push(
-      vscode.commands.registerCommand('vedh.copyCommandConfig', (node: CommandNode) => {
+      vscode.commands.registerCommand('vedh.commands.copy.config', (node: CommandNode) => {
         this.copyCommandConfig(node);
       })
     );
 
     // 注册跳转到命令注册位置
     context.subscriptions.push(
-      vscode.commands.registerCommand('vedh.gotoCommandRegistration', (node: CommandNode) => {
+      vscode.commands.registerCommand('vedh.commands.goto.registration', (node: CommandNode) => {
         this.gotoCommandRegistration(node);
       })
     );
@@ -180,7 +180,7 @@ export class CommandsProvider implements vscode.TreeDataProvider<CommandNode> {
     if (element.type === NodeType.command) {
       const treeItem = element;
       treeItem.command = {
-        command: 'vedh.editCommand',
+        command: 'vedh.commands.edit',
         title: 'Edit',
         arguments: [element]
       };
