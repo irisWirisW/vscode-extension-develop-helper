@@ -84,6 +84,13 @@
           "name": "menus管理",
           "collapsible": "collapsed",
           "icon": "resources/icon/icon.svg"
+        },
+        {
+          "id": "vedh.keybindings",
+          "name": "keybindings管理",
+          "when": "resourceFilename == package.json",
+          "collapsible": "collapsed",
+          "icon": "resources/icon/icon.svg"
         }
       ]
     },
@@ -112,6 +119,11 @@
         {
           "command": "vedh.menus.refresh",
           "when": "view == vedh.menus",
+          "group": "navigation"
+        },
+        {
+          "command": "vedh.keybindings.refresh",
+          "when": "view == vedh.keybindings",
           "group": "navigation"
         }
       ],
@@ -165,6 +177,16 @@
           "command": "vedh.menus.edit",
           "when": "view == vedh.menus && viewItem == menuItem",
           "group": "inline"
+        },
+        {
+          "command": "vedh.keybindings.edit",
+          "when": "view == vedh.keybindings && viewItem == keybinding",
+          "group": "inline"
+        },
+        {
+          "command": "vedh.keybindings.copy",
+          "when": "view == vedh.keybindings && viewItem == keybinding",
+          "group": "copy"
         }
       ]
     },
@@ -243,6 +265,21 @@
         "command": "vedh.toggleNotifications",
         "title": "切换信息提示",
         "icon": "$(bell)"
+      },
+      {
+        "command": "vedh.keybindings.refresh",
+        "title": "Refresh Keybindings",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "vedh.keybindings.edit",
+        "title": "Edit Keybinding",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "vedh.keybindings.copy",
+        "title": "复制快捷键配置",
+        "icon": "$(copy)"
       }
     ],
     "keybindings": [

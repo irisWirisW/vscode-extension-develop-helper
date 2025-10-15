@@ -3,6 +3,7 @@ import { ViewProvider } from './viewProvider';
 import { CommandsProvider } from './commandsProvider';
 import { MenusProvider } from './menusProvider';
 import { ViewsContainersProvider } from './viewsContainersProvider';
+import { KeybindingsProvider } from './keybindingsProvider';
 import { showNotification, toggleNotifications } from './utils/notificationManager';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -47,6 +48,14 @@ export function activate(context: vscode.ExtensionContext) {
 	const menusProvider = new MenusProvider(context, rootPath);
 	vscode.window.createTreeView("vedh.menus", {
 		treeDataProvider: menusProvider,
+		showCollapseAll: true,
+		canSelectMany: false,
+	});
+
+	// Keybindings TreeView
+	const keybindingsProvider = new KeybindingsProvider(context, rootPath);
+	vscode.window.createTreeView("vedh.keybindings", {
+		treeDataProvider: keybindingsProvider,
 		showCollapseAll: true,
 		canSelectMany: false,
 	});
