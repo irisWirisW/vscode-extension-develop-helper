@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { IconManager } from './iconManager';
 import { FileUtils } from './utils/fileUtils';
+import { showNotification } from './utils/notificationManager';
 
 // 1.传入当前的工作区文件夹地址
 // 2.获取到package.json的路径
@@ -166,7 +167,7 @@ export class ViewProvider implements vscode.TreeDataProvider<nodeView> {
   }
   editNode(node: nodeView): void {
     console.log("editNode: ", node);
-    vscode.window.showInformationMessage(`Editing node: ${node.name}`);
+    showNotification(`Editing node: ${node.name}`);
   }
 
   async addView(): Promise<void> {
@@ -329,7 +330,7 @@ export class ViewProvider implements vscode.TreeDataProvider<nodeView> {
 
       if (success) {
         await doc.save();
-        vscode.window.showInformationMessage(`成功添加 view: ${viewName}`);
+        showNotification(`成功添加 view: ${viewName}`);
         this.refresh();
       }
     } catch (error) {
@@ -345,7 +346,7 @@ export class ViewProvider implements vscode.TreeDataProvider<nodeView> {
 
     // 可以删除 level1 (整个 viewContainer) 或 level2 (具体的 view)
     if (node.type !== nodeType.level1 && node.type !== nodeType.level2) {
-      vscode.window.showInformationMessage('只能删除 viewContainer 或具体的 view 项');
+      showNotification('只能删除 viewContainer 或具体的 view 项');
       return;
     }
 
@@ -517,7 +518,7 @@ export class ViewProvider implements vscode.TreeDataProvider<nodeView> {
       if (success) {
         await doc.save();
         const deleteType = node.type === nodeType.level1 ? 'viewContainer' : 'view';
-        vscode.window.showInformationMessage(`已删除 ${deleteType}: ${node.name}`);
+        showNotification(`已删除 ${deleteType}: ${node.name}`);
         this.refresh();
       }
     } catch (error) {

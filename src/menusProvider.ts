@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { IconManager } from './iconManager';
+import { showNotification } from './utils/notificationManager';
 
 export class MenusProvider implements vscode.TreeDataProvider<MenuNode> {
 
@@ -235,7 +236,7 @@ export class MenusProvider implements vscode.TreeDataProvider<MenuNode> {
             vscode.TextEditorRevealType.InCenter
           );
 
-          vscode.window.showInformationMessage(`已定位到菜单: ${node.name}`);
+          showNotification(`已定位到菜单: ${node.name}`);
         }
       } catch (error) {
         vscode.window.showErrorMessage(`打开文件失败: ${error}`);

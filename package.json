@@ -37,6 +37,16 @@
     "package": "npm version minor --no-git-tag-version && vsce package --allow-missing-repository -o ./out"
   },
   "contributes": {
+    "configuration": {
+      "title": "VSCode Extension Develop Helper",
+      "properties": {
+        "vedh.showNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否显示信息提示通知"
+        }
+      }
+    },
     "viewsContainers": {
       "activitybar": [
         {
@@ -228,6 +238,19 @@
         "command": "vedh.general.edit",
         "title": "Edit",
         "icon": "$(edit)"
+      },
+      {
+        "command": "vedh.toggleNotifications",
+        "title": "切换信息提示",
+        "icon": "$(bell)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "vedh.toggleNotifications",
+        "key": "ctrl+alt+n",
+        "mac": "cmd+alt+n",
+        "when": "editorTextFocus || !editorTextFocus"
       }
     ]
   },

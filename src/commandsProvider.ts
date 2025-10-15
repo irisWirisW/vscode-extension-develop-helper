@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { IconManager, COMMON_ICONS } from './iconManager';
 import { CodeNavigator } from './utils/codeNavigator';
+import { showNotification } from './utils/notificationManager';
 
 export class CommandsProvider implements vscode.TreeDataProvider<CommandNode> {
 
@@ -571,7 +572,7 @@ export class CommandsProvider implements vscode.TreeDataProvider<CommandNode> {
 
         if (success) {
           await doc.save();
-          vscode.window.showInformationMessage(`图标已更新`);
+          showNotification(`图标已更新`);
           this.refresh();
         }
       } else {
@@ -613,7 +614,7 @@ export class CommandsProvider implements vscode.TreeDataProvider<CommandNode> {
 
         if (success) {
           await doc.save();
-          vscode.window.showInformationMessage(`属性 "${propertyName}" 已更新`);
+          showNotification(`属性 "${propertyName}" 已更新`);
           this.refresh();
         }
       } else {
@@ -627,7 +628,7 @@ export class CommandsProvider implements vscode.TreeDataProvider<CommandNode> {
   copyCommandId(node: CommandNode): void {
     if (node.type === NodeType.command && node.id) {
       vscode.env.clipboard.writeText(node.id).then(() => {
-        vscode.window.showInformationMessage(`已复制命令 ID: ${node.id}`);
+        showNotification(`已复制命令 ID: ${node.id}`);
       });
     }
   }
@@ -638,7 +639,7 @@ export class CommandsProvider implements vscode.TreeDataProvider<CommandNode> {
       if (command) {
         const configText = JSON.stringify(command, null, 2);
         vscode.env.clipboard.writeText(configText).then(() => {
-          vscode.window.showInformationMessage(`已复制命令配置: ${node.name}`);
+          showNotification(`已复制命令配置: ${node.name}`);
         });
       }
     }

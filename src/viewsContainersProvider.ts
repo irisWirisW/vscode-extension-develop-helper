@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { IconManager } from './iconManager';
+import { showNotification } from './utils/notificationManager';
 
 export class ViewsContainersProvider implements vscode.TreeDataProvider<ViewContainerNode> {
 
@@ -234,7 +235,7 @@ export class ViewsContainersProvider implements vscode.TreeDataProvider<ViewCont
             vscode.TextEditorRevealType.InCenter
           );
 
-          vscode.window.showInformationMessage(`已定位到视图容器: ${node.name}`);
+          showNotification(`已定位到视图容器: ${node.name}`);
         } else {
           vscode.window.showWarningMessage(`无法找到视图容器: ${node.id}`);
         }
