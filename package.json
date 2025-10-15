@@ -2,7 +2,7 @@
   "name": "vscode-extension-develop-helper",
   "displayName": "VSCode Extension Develop Helper",
   "description": "A helper tool for VSCode extension development that visualizes package.json configurations",
-  "version": "0.1.48",
+  "version": "0.1.49",
   "publisher": "1risW",
   "author": "1risW",
   "license": "MIT",
