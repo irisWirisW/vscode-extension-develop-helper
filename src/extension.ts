@@ -5,6 +5,11 @@ import { MenusProvider } from './menusProvider';
 import { ViewsContainersProvider } from './viewsContainersProvider';
 
 export function activate(context: vscode.ExtensionContext) {
+	console.log('🚀 VEDH Extension activated!');
+
+	// 显示激活通知（仅用于调试）
+	vscode.window.showInformationMessage('插件开发助手已激活');
+
 	const rootPath = (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0)
 		? vscode.workspace.workspaceFolders[0].uri.fsPath
 		: undefined;
@@ -42,4 +47,6 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 }
 
-export function deactivate() { }
+export function deactivate() {
+	console.log('👋 VEDH Extension deactivated!');
+}
