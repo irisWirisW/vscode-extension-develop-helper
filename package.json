@@ -2,7 +2,7 @@
   "name": "vscode-extension-develop-helper",
   "displayName": "VSCode Extension Develop Helper",
   "description": "A helper tool for VSCode extension development that visualizes package.json configurations",
-  "version": "0.1.23",
+  "version": "0.1.31",
   "publisher": "1risW",
   "author": "1risW",
   "license": "MIT",
@@ -67,12 +67,8 @@
       ],
       "test": [
         {
-          "id": "test.1",
-          "name": "这是测试1"
-        },
-        {
-          "id": "test.2",
-          "name": "这是测试2"
+          "id": "aba",
+          "name": "sd"
         }
       ]
     },
@@ -81,6 +77,11 @@
         {
           "command": "vedh.refreshViewsContainers",
           "when": "view == vedh.viewsContainers",
+          "group": "navigation"
+        },
+        {
+          "command": "vedh.addView",
+          "when": "view == vedh.views",
           "group": "navigation"
         },
         {
@@ -111,6 +112,16 @@
           "group": "inline"
         },
         {
+          "command": "vedh.deleteView",
+          "when": "view == vedh.views && viewItem == level1",
+          "group": "inline"
+        },
+        {
+          "command": "vedh.deleteView",
+          "when": "view == vedh.views && viewItem == level2",
+          "group": "inline"
+        },
+        {
           "command": "vedh.editCommand",
           "when": "view == vedh.commands && viewItem == command",
           "group": "inline"
@@ -129,6 +140,11 @@
           "command": "vedh.copyCommandConfig",
           "when": "view == vedh.commands && viewItem == command",
           "group": "copy"
+        },
+        {
+          "command": "vedh.gotoCommandRegistration",
+          "when": "view == vedh.commands && viewItem == command",
+          "group": "inline"
         },
         {
           "command": "vedh.editMenu",
@@ -192,6 +208,21 @@
         "command": "vedh.editMenu",
         "title": "Edit Menu",
         "icon": "$(edit)"
+      },
+      {
+        "command": "vedh.addView",
+        "title": "Add New View",
+        "icon": "$(add)"
+      },
+      {
+        "command": "vedh.deleteView",
+        "title": "删除 View",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "vedh.gotoCommandRegistration",
+        "title": "跳转到命令注册位置",
+        "icon": "$(go-to-file)"
       }
     ]
   },

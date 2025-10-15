@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { IconManager, COMMON_ICONS } from './iconManager';
+import { CodeNavigator } from './utils/codeNavigator';
 
 export class CommandsProvider implements vscode.TreeDataProvider<CommandNode> {
 
@@ -53,6 +54,13 @@ export class CommandsProvider implements vscode.TreeDataProvider<CommandNode> {
     context.subscriptions.push(
       vscode.commands.registerCommand('vedh.copyCommandConfig', (node: CommandNode) => {
         this.copyCommandConfig(node);
+      })
+    );
+
+    // 注册跳转到命令注册位置
+    context.subscriptions.push(
+      vscode.commands.registerCommand('vedh.gotoCommandRegistration', (node: CommandNode) => {
+        this.gotoCommandRegistration(node);
       })
     );
   }
@@ -634,6 +642,115 @@ export class CommandsProvider implements vscode.TreeDataProvider<CommandNode> {
         });
       }
     }
+  }
+
+  async gotoCommandRegistration(node: CommandNode): Promise<void> {
+    if (node.type !== NodeType.command || !node.id || !this.currentPath) {
+      return;
+    }
+
+    // 显示加载提示
+    await vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      title: `正在搜索命令注册: ${node.id}`,
+      cancellable: false
+    }, async (progress) => {
+      progress.report({ increment: 0 });
+
+      try {
+        // 使用 CodeNavigator 查找命令注册位置
+        const location = await CodeNavigator.findCommandRegistration(
+          node.id,
+          this.currentPath!
+        );
+
+        progress.report({ increment: 100 });
+
+        if (location) {
+          // 直接跳转到命令注册位置
+          await CodeNavigator.navigateToLocation(location);
+        } else {
+          // 未找到，提供搜索选项
+          const choice = await vscode.window.showWarningMessage(
+            `未找到命令 "${node.id}" 的注册位置`,
+            '在所有文件中搜索',
+            '查看 package.json',
+            '取消'
+          );
+
+          if (choice === '在所有文件中搜索') {
+            // 使用 VS Code 的全局搜索
+            vscode.commands.executeCommand('workbench.action.findInFiles', {
+              query: `registerCommand.*${node.id}`,
+              isRegex: true,
+              isCaseSensitive: true
+            });
+          } else if (choice === '查看 package.json') {
+            // 跳转到 package.json 中的命令定义
+            this.editCommand(node);
+          }
+        }
+      } catch (error) {
+        vscode.window.showErrorMessage(`搜索失败: ${error}`);
+      }
+    });
+  }
+
+  private async previewLocation(location: { filePath: string; line: number; context: string }): Promise<void> {
+    const fileName = path.basename(location.filePath);
+    const webview = vscode.window.createWebviewPanel(
+      'commandPreview',
+      `命令注册预览: ${fileName}`,
+      vscode.ViewColumn.Beside,
+      {}
+    );
+
+    webview.webview.html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body {
+            font-family: 'Consolas', 'Monaco', monospace;
+            padding: 20px;
+            background-color: var(--vscode-editor-background);
+            color: var(--vscode-editor-foreground);
+          }
+          pre {
+            background-color: var(--vscode-textCodeBlock-background);
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            line-height: 1.5;
+          }
+          .file-info {
+            color: var(--vscode-descriptionForeground);
+            margin-bottom: 15px;
+            font-size: 0.9em;
+          }
+          .highlight-line {
+            background-color: var(--vscode-editor-findMatchHighlightBackground);
+          }
+        </style>
+      </head>
+      <body>
+        <div class="file-info">
+          📄 ${location.filePath}<br>
+          📍 行: ${location.line + 1}
+        </div>
+        <pre><code>${this.escapeHtml(location.context)}</code></pre>
+      </body>
+      </html>
+    `;
+  }
+
+  private escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 }
 
