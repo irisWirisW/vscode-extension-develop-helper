@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { IconManager } from './iconManager';
 import { FileUtils } from './utils/fileUtils';
 import { showNotification } from './utils/notificationManager';
+import { CodeNavigator } from './utils/codeNavigator';
 
 // 1.传入当前的工作区文件夹地址
 // 2.获取到package.json的路径
@@ -55,6 +56,13 @@ export class ViewProvider implements vscode.TreeDataProvider<nodeView> {
     context.subscriptions.push(
       vscode.commands.registerCommand('vedh.views.delete', (node: nodeView) => {
         this.deleteView(node);
+      })
+    );
+
+    // 注册跳转到代码位置命令
+    context.subscriptions.push(
+      vscode.commands.registerCommand('vedh.views.goto.registration', (node: nodeView) => {
+        this.gotoViewRegistration(node);
       })
     );
   }
@@ -165,9 +173,72 @@ export class ViewProvider implements vscode.TreeDataProvider<nodeView> {
     this._onDidChangeTreeData.fire();
     console.log("refresh");
   }
+
   editNode(node: nodeView): void {
     console.log("editNode: ", node);
     showNotification(`Editing node: ${node.name}`);
+  }
+
+  async gotoViewRegistration(node: nodeView): Promise<void> {
+    // 只对 level2 (具体的 view) 有效
+    if (node.type !== nodeType.level2 || !this.currentPath) {
+      return;
+    }
+
+    // node.description 存储的是真实的 viewId
+    const viewId = node.description;
+    if (!viewId) {
+      return;
+    }
+
+    // 显示加载提示
+    await vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      title: `正在搜索视图注册: ${viewId}`,
+      cancellable: false
+    }, async (progress) => {
+      progress.report({ increment: 0 });
+
+      try {
+        // 使用 CodeNavigator 查找视图注册位置
+        const location = await CodeNavigator.findViewRegistration(
+          viewId,
+          this.currentPath!
+        );
+
+        progress.report({ increment: 100 });
+
+        if (location) {
+          // 直接跳转到视图注册位置
+          await CodeNavigator.navigateToLocation(location);
+        } else {
+          // 未找到，提供搜索选项
+          const choice = await vscode.window.showWarningMessage(
+            `未找到视图 "${viewId}" 的注册位置`,
+            '在所有文件中搜索',
+            '查看 package.json',
+            '取消'
+          );
+
+          if (choice === '在所有文件中搜索') {
+            // 使用 VS Code 的全局搜索
+            vscode.commands.executeCommand('workbench.action.findInFiles', {
+              query: viewId,
+              isRegex: false,
+              isCaseSensitive: true
+            });
+          } else if (choice === '查看 package.json') {
+            // 跳转到 package.json 中的视图定义
+            if (this.pkgPath) {
+              const doc = await vscode.workspace.openTextDocument(this.pkgPath);
+              await vscode.window.showTextDocument(doc);
+            }
+          }
+        }
+      } catch (error) {
+        vscode.window.showErrorMessage(`搜索失败: ${error}`);
+      }
+    });
   }
 
   async addView(): Promise<void> {

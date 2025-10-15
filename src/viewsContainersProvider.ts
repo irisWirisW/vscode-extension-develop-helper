@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { IconManager } from './iconManager';
 import { showNotification } from './utils/notificationManager';
+import { CodeNavigator } from './utils/codeNavigator';
 
 export class ViewsContainersProvider implements vscode.TreeDataProvider<ViewContainerNode> {
 
@@ -40,6 +41,13 @@ export class ViewsContainersProvider implements vscode.TreeDataProvider<ViewCont
     context.subscriptions.push(
       vscode.commands.registerCommand('vedh.viewsContainers.refresh', () => {
         this.refresh();
+      })
+    );
+
+    // 注册跳转到代码位置命令
+    context.subscriptions.push(
+      vscode.commands.registerCommand('vedh.viewsContainers.goto.registration', (node: ViewContainerNode) => {
+        this.gotoViewContainerRegistration(node);
       })
     );
   }
@@ -243,6 +251,58 @@ export class ViewsContainersProvider implements vscode.TreeDataProvider<ViewCont
         vscode.window.showErrorMessage(`打开文件失败: ${error}`);
       }
     }
+  }
+
+  async gotoViewContainerRegistration(node: ViewContainerNode): Promise<void> {
+    if (node.type !== NodeType.container || !node.id || !this.currentPath) {
+      return;
+    }
+
+    // 显示加载提示
+    await vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      title: `正在搜索视图容器注册: ${node.id}`,
+      cancellable: false
+    }, async (progress) => {
+      progress.report({ increment: 0 });
+
+      try {
+        // 使用 CodeNavigator 查找视图容器注册位置
+        const location = await CodeNavigator.findViewContainerRegistration(
+          node.id,
+          this.currentPath!
+        );
+
+        progress.report({ increment: 100 });
+
+        if (location) {
+          // 直接跳转到视图容器注册位置
+          await CodeNavigator.navigateToLocation(location);
+        } else {
+          // 未找到，提供搜索选项
+          const choice = await vscode.window.showWarningMessage(
+            `未找到视图容器 "${node.id}" 的注册位置`,
+            '在所有文件中搜索',
+            '查看 package.json',
+            '取消'
+          );
+
+          if (choice === '在所有文件中搜索') {
+            // 使用 VS Code 的全局搜索
+            vscode.commands.executeCommand('workbench.action.findInFiles', {
+              query: node.id,
+              isRegex: false,
+              isCaseSensitive: true
+            });
+          } else if (choice === '查看 package.json') {
+            // 跳转到 package.json 中的定义
+            this.editViewContainer(node);
+          }
+        }
+      } catch (error) {
+        vscode.window.showErrorMessage(`搜索失败: ${error}`);
+      }
+    });
   }
 }
 

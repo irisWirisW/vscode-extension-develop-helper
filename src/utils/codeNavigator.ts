@@ -292,6 +292,149 @@ export class CodeNavigator {
       return [];
     }
   }
+
+  /**
+   * 查找 ViewContainer 注册的位置
+   * @param viewContainerId ViewContainer ID（如 'myExtension-explorer'）
+   * @param workspacePath 工作区路径
+   * @returns ViewContainer 注册的位置信息
+   */
+  static async findViewContainerRegistration(
+    viewContainerId: string,
+    workspacePath: string
+  ): Promise<CommandLocation | null> {
+    const searchDirs = ['src', 'extension', 'lib', 'out', 'dist'];
+    const fileExtensions = ['.ts', '.js', '.tsx', '.jsx'];
+
+    for (const dir of searchDirs) {
+      const searchPath = path.join(workspacePath, dir);
+      if (!fs.existsSync(searchPath)) {
+        continue;
+      }
+
+      const result = await this.searchInDirectoryForPattern(
+        searchPath,
+        viewContainerId,
+        fileExtensions,
+        [
+          // 搜索 viewContainer 相关的模式
+          new RegExp(`['"\`]${this.escapeRegex(viewContainerId)}['"\`]`, 'g'),
+        ]
+      );
+
+      if (result) {
+        return result;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * 查找 View 的 TreeDataProvider 注册位置
+   * @param viewId View ID（如 'myExtension.myView'）
+   * @param workspacePath 工作区路径
+   * @returns View 注册的位置信息
+   */
+  static async findViewRegistration(
+    viewId: string,
+    workspacePath: string
+  ): Promise<CommandLocation | null> {
+    const searchDirs = ['src', 'extension', 'lib', 'out', 'dist'];
+    const fileExtensions = ['.ts', '.js', '.tsx', '.jsx'];
+
+    for (const dir of searchDirs) {
+      const searchPath = path.join(workspacePath, dir);
+      if (!fs.existsSync(searchPath)) {
+        continue;
+      }
+
+      const result = await this.searchInDirectoryForPattern(
+        searchPath,
+        viewId,
+        fileExtensions,
+        [
+          // registerTreeDataProvider
+          new RegExp(`registerTreeDataProvider\\s*\\(\\s*['"\`]${this.escapeRegex(viewId)}['"\`]`, 'g'),
+          // createTreeView
+          new RegExp(`createTreeView\\s*\\(\\s*['"\`]${this.escapeRegex(viewId)}['"\`]`, 'g'),
+          // 直接引用 viewId
+          new RegExp(`['"\`]${this.escapeRegex(viewId)}['"\`]`, 'g'),
+        ]
+      );
+
+      if (result) {
+        return result;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * 使用自定义模式在目录中搜索
+   */
+  private static async searchInDirectoryForPattern(
+    dirPath: string,
+    searchTerm: string,
+    extensions: string[],
+    patterns: RegExp[],
+    shallow: boolean = false
+  ): Promise<CommandLocation | null> {
+    try {
+      const files = this.getAllFiles(dirPath, extensions, shallow);
+
+      for (const file of files) {
+        const result = await this.searchInFileForPattern(file, patterns);
+        if (result) {
+          return result;
+        }
+      }
+    } catch (error) {
+      console.error('Error searching directory:', error);
+    }
+
+    return null;
+  }
+
+  /**
+   * 在文件中使用自定义模式搜索
+   */
+  private static async searchInFileForPattern(
+    filePath: string,
+    patterns: RegExp[]
+  ): Promise<CommandLocation | null> {
+    try {
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const lines = content.split('\n');
+
+      for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+        const line = lines[lineIndex];
+
+        for (const pattern of patterns) {
+          const match = pattern.exec(line);
+          if (match) {
+            // 找到匹配项，获取上下文
+            const contextStart = Math.max(0, lineIndex - 2);
+            const contextEnd = Math.min(lines.length - 1, lineIndex + 10);
+            const context = lines.slice(contextStart, contextEnd + 1).join('\n');
+
+            return {
+              filePath,
+              line: lineIndex,
+              column: match.index,
+              context,
+              matchText: match[0]
+            };
+          }
+        }
+      }
+    } catch (error) {
+      // 忽略无法读取的文件
+    }
+
+    return null;
+  }
 }
 
 /**

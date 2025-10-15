@@ -2,7 +2,7 @@
   "name": "vscode-extension-develop-helper",
   "displayName": "VSCode Extension Develop Helper",
   "description": "A helper tool for VSCode extension development that visualizes package.json configurations",
-  "version": "0.1.31",
+  "version": "0.1.48",
   "publisher": "1risW",
   "author": "1risW",
   "license": "MIT",
@@ -130,8 +130,18 @@
           "group": "inline"
         },
         {
+          "command": "vedh.viewsContainers.goto.registration",
+          "when": "view == vedh.viewsContainers && viewItem == container",
+          "group": "inline"
+        },
+        {
           "command": "vedh.views.edit",
           "when": "view == vedh.views",
+          "group": "inline"
+        },
+        {
+          "command": "vedh.views.goto.registration",
+          "when": "view == vedh.views && viewItem == level2",
           "group": "inline"
         },
         {
@@ -175,6 +185,21 @@
           "group": "inline"
         },
         {
+          "command": "vedh.menus.goto.registration",
+          "when": "view == vedh.menus && viewItem == menuItem",
+          "group": "inline"
+        },
+        {
+          "command": "vedh.menus.delete",
+          "when": "view == vedh.menus && viewItem == menuType",
+          "group": "inline"
+        },
+        {
+          "command": "vedh.menus.delete",
+          "when": "view == vedh.menus && viewItem == menuItem",
+          "group": "inline"
+        },
+        {
           "command": "vedh.keybindings.edit",
           "when": "view == vedh.keybindings && viewItem == keybinding",
           "group": "inline"
@@ -203,6 +228,11 @@
           "command": "vedh.keybindings.recordMac",
           "when": "view == vedh.keybindings && viewItem == property",
           "group": "edit"
+        },
+        {
+          "command": "vedh.keybindings.goto.registration",
+          "when": "view == vedh.keybindings && viewItem == keybinding",
+          "group": "inline"
         }
       ]
     },
@@ -263,6 +293,11 @@
         "icon": "$(edit)"
       },
       {
+        "command": "vedh.viewsContainers.goto.registration",
+        "title": "跳转到视图容器注册位置",
+        "icon": "$(go-to-file)"
+      },
+      {
         "command": "vedh.menus.refresh",
         "title": "Refresh Menus",
         "icon": "$(sync)"
@@ -271,6 +306,16 @@
         "command": "vedh.menus.edit",
         "title": "Edit Menu",
         "icon": "$(edit)"
+      },
+      {
+        "command": "vedh.menus.goto.registration",
+        "title": "跳转到命令注册位置",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "vedh.menus.delete",
+        "title": "删除菜单项",
+        "icon": "$(trash)"
       },
       {
         "command": "vedh.general.edit",
@@ -306,6 +351,16 @@
         "command": "vedh.keybindings.recordMac",
         "title": "录制快捷键 (macOS)",
         "icon": "$(record-keys)"
+      },
+      {
+        "command": "vedh.keybindings.goto.registration",
+        "title": "跳转到命令注册位置",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "vedh.views.goto.registration",
+        "title": "跳转到视图注册位置",
+        "icon": "$(go-to-file)"
       }
     ],
     "keybindings": [

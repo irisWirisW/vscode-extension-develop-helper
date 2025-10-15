@@ -4,6 +4,7 @@ import * as path from 'path';
 import { IconManager } from './iconManager';
 import { showNotification } from './utils/notificationManager';
 import { KeybindingRecorder } from './utils/keybindingRecorder';
+import { CodeNavigator } from './utils/codeNavigator';
 
 export class KeybindingsProvider implements vscode.TreeDataProvider<KeybindingNode> {
 
@@ -67,6 +68,13 @@ export class KeybindingsProvider implements vscode.TreeDataProvider<KeybindingNo
         this.recordKeybinding(node, 'mac');
       })
     );
+
+    // 注册跳转到命令注册位置
+    context.subscriptions.push(
+      vscode.commands.registerCommand('vedh.keybindings.goto.registration', (node: KeybindingNode) => {
+        this.gotoKeybindingRegistration(node);
+      })
+    );
   }
 
   fileExist(filePath: string | undefined): boolean {
@@ -119,14 +127,22 @@ export class KeybindingsProvider implements vscode.TreeDataProvider<KeybindingNo
     if (!element) {
       // 返回所有快捷键绑定
       const keybindings = this.pkgJson.contributes.keybindings;
+      const commands = this.pkgJson.contributes?.commands || [];
+
       return Promise.resolve(
         keybindings.map((kb: any, index: number) => {
-          const displayName = kb.command || `Keybinding ${index + 1}`;
+          // 从 commands 配置中查找对应的 title
+          const command = commands.find((cmd: any) => cmd.command === kb.command);
+          const displayName = command?.title || kb.command || `Keybinding ${index + 1}`;
+
+          // 使用快捷键作为描述
+          const keyDescription = kb.key || kb.mac || '';
+
           return new KeybindingNode(
             NodeType.keybinding,
             displayName,
             kb.command || '',
-            '',
+            keyDescription,
             vscode.TreeItemCollapsibleState.Collapsed,
             "keybinding",
             this.iconManager,
@@ -140,57 +156,23 @@ export class KeybindingsProvider implements vscode.TreeDataProvider<KeybindingNo
       const kb = element.keybindingData;
       const details: KeybindingNode[] = [];
 
-      // command
-      if (kb.command) {
-        details.push(new KeybindingNode(
-          NodeType.property,
-          "command",
-          kb.command,
-          kb.command,
-          vscode.TreeItemCollapsibleState.None,
-          "property",
-          this.iconManager
-        ));
-      }
+      // 遍历所有属性并创建节点
+      const propertyOrder = ['command', 'key', 'mac', 'when'];
 
-      // key (Windows/Linux)
-      if (kb.key) {
-        details.push(new KeybindingNode(
-          NodeType.property,
-          "key",
-          kb.key,
-          kb.key,
-          vscode.TreeItemCollapsibleState.None,
-          "property",
-          this.iconManager
-        ));
-      }
-
-      // mac
-      if (kb.mac) {
-        details.push(new KeybindingNode(
-          NodeType.property,
-          "mac",
-          kb.mac,
-          kb.mac,
-          vscode.TreeItemCollapsibleState.None,
-          "property",
-          this.iconManager
-        ));
-      }
-
-      // when
-      if (kb.when) {
-        details.push(new KeybindingNode(
-          NodeType.property,
-          "when",
-          kb.when,
-          kb.when,
-          vscode.TreeItemCollapsibleState.None,
-          "property",
-          this.iconManager
-        ));
-      }
+      propertyOrder.forEach(propKey => {
+        if (kb[propKey]) {
+          const propertyValue = String(kb[propKey]);
+          details.push(new KeybindingNode(
+            NodeType.property,
+            propKey,
+            propertyValue,  // value
+            propertyValue,  // description (用于在树视图中显示)
+            vscode.TreeItemCollapsibleState.None,
+            "property",
+            this.iconManager
+          ));
+        }
+      });
 
       return Promise.resolve(details);
     }
@@ -199,6 +181,13 @@ export class KeybindingsProvider implements vscode.TreeDataProvider<KeybindingNo
   }
 
   getTreeItem(element: KeybindingNode): vscode.TreeItem {
+    // 对于错误和信息节点，不添加命令
+    if (element.type === NodeType.error || element.type === NodeType.info) {
+      return element;
+    }
+
+    // 对于 keybinding 节点，不设置点击命令，让它可以正常展开
+    // 其他节点也不设置点击命令
     return element;
   }
 
@@ -525,6 +514,64 @@ export class KeybindingsProvider implements vscode.TreeDataProvider<KeybindingNo
     }
 
     return undefined;
+  }
+
+  async gotoKeybindingRegistration(node: KeybindingNode): Promise<void> {
+    if (node.type !== NodeType.keybinding || !node.keybindingData || !this.currentPath) {
+      return;
+    }
+
+    const commandId = node.keybindingData.command;
+    if (!commandId) {
+      vscode.window.showWarningMessage('快捷键没有关联的命令');
+      return;
+    }
+
+    // 显示加载提示
+    await vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      title: `正在搜索命令注册: ${commandId}`,
+      cancellable: false
+    }, async (progress) => {
+      progress.report({ increment: 0 });
+
+      try {
+        // 使用 CodeNavigator 查找命令注册位置
+        const location = await CodeNavigator.findCommandRegistration(
+          commandId,
+          this.currentPath!
+        );
+
+        progress.report({ increment: 100 });
+
+        if (location) {
+          // 直接跳转到命令注册位置
+          await CodeNavigator.navigateToLocation(location);
+        } else {
+          // 未找到，提供搜索选项
+          const choice = await vscode.window.showWarningMessage(
+            `未找到命令 "${commandId}" 的注册位置`,
+            '在所有文件中搜索',
+            '查看 package.json',
+            '取消'
+          );
+
+          if (choice === '在所有文件中搜索') {
+            // 使用 VS Code 的全局搜索
+            vscode.commands.executeCommand('workbench.action.findInFiles', {
+              query: `registerCommand.*${commandId}`,
+              isRegex: true,
+              isCaseSensitive: true
+            });
+          } else if (choice === '查看 package.json') {
+            // 跳转到 package.json 中的快捷键定义
+            this.editKeybinding(node);
+          }
+        }
+      } catch (error) {
+        vscode.window.showErrorMessage(`搜索失败: ${error}`);
+      }
+    });
   }
 }
 
